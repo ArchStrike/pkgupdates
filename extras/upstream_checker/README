@@ -1,0 +1,76 @@
+Summary:
+    This tool can be used to check packages in the pkg repos against
+    packages in upstream repos (Core, Extra, Testing, & Community)
+    and will build a list of packages that appear in pkg as well as
+    AL repos.
+
+Setup:
+    To use this tool properly you'll need local copies of the AL
+    repos as well as the pkg repo from gitlab to get these run the
+    following commands. All of these repos should be checked out
+    into the same working directory you run check_upstream.sh
+    from.
+
+    NOTE: These are large repos and it is frowned upon by the AL
+    maintainers to fetch them in their entirety.  It is also frowned
+    upon to write automated scripts against them.  After checking
+    out these repos, you should keep them around if you plan on
+    using this tool.  Repeated full checkouts might result in your
+    IP being blocked by their repos servers. You have been warned.
+
+    AL repos:
+    $ svn co svn://svn.archlinux.org/packages al_packages
+    $ svn co svn://svn.archlinux.org/community al_community
+
+    pkg repo:
+    $ git clone https://github.com/ArchStrike/ArchStrike.git
+    $ cd ArchStrike
+
+Usage:
+    NOTE:
+    This script takes a few minutes to complete depending on your hardware
+    just let it run, it's working and will notify you visually when it's done.
+
+    Running:
+    Once all the repos have been checked out you simple run the
+    check_upstream.sh script.  It will update the respective repos
+    to their latest versions, it will then check all packages in the
+    pkg repo against AL using their names, it will perform a secondary
+    normalized check on the respective PKGBUILD's pkgdesc.  It will also
+    strip -git from package names in an attempt to find matches.
+
+    $ ./check_upstream.sh
+
+    Ignoring packages:
+    If a package is needed in pkg but also present upstream, adding it's
+    name as it appears in the pkg repo to the ignore.txt file will force
+    it to be bypassed during the check.
+
+    upstream.txt:
+    This file is used by the script for a couple purposes.
+
+        1. logging the changes for review
+        2. emailing the log to the desired notification address
+        3. preventing duplicate e-mails from spamming your inbox *
+
+    * after a successful run a new upstream.txt file is written and then
+      compared to the last run, if the sums are different we fire off an
+      e-mail as something has changed, otherwise we do nothing besides
+      move the newest version in place of the old.
+
+
+CRON:
+    This script was designed to run as a cron job, it handles it's own
+    mailing logic so you should direct it's output to /dev/null or blank
+    the MAILTO to prevent getting spammed by it.
+
+    Another consideration is performance/duration.  Since this cron takes
+    multiple minutes to run, running it often via a cron will soon bog down
+    your system with multiple instances all fighting for resources.
+
+    Last but not least, scripting against the AL repos as mentioned before
+    IS FROWNED UPON, so make sure your cron isn't too aggressive with it's
+    timing.
+
+    Once every hour:
+    0 * * * * /path/to/the/script/check_upstream.sh > /dev/null 2>&1

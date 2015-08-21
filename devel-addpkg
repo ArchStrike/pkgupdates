@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+# Exit with an error if no arguments are given
+[[ -z "$1" ]] && {
+    printf '%s\n' "Error: no arguments provided, please provide the name of the package you wish to add" >&2
+    exit 1
+}
+
+# Change to the script directory and remember where it is
+cd "${0%/*}"
+
+# The config file to load
+config='pkgupdates.conf'
+
+# Load the config if it exists
+[[ -f "$config" ]] && source "$config"
+
+# Load the default if it isn't in the config
+[[ -z "$DEVELVERSION_CONF" ]] && DEVELVERSION_CONF="$PWD/develversion.conf"
+
+# Create a temp directory
+tmp_dir="$(mktemp -d)"
+tmp_config="$tmp_dir/"$(sed 's|^.*\/||' <<< "$DEVELVERSION_CONF")
+
+function tmpdir_cleanup {
+    # Remove the temp file if it exists
+    [[ -f "$tmp_config" ]] \
+        && rm "$tmp_config"
+
+    # Remove the temp directory if it exists
+    [[ -d "$tmp_dir" ]] \
+        && rmdir "$tmp_dir"
+}
+
+function error {
+    tmpdir_cleanup
+    printf '%s\n' "Error: $1" >&2
+    exit 1
+}
+
+# Copy the config to the temp location
+cp "$DEVELVERSION_CONF" "$tmp_config"
+
+# Add the new package to the temp config and sort the config alphabetically
+printf '%s\n' "$1" >> "$tmp_config"
+sort -u -o "$tmp_config" "$tmp_config"
+
+# fail if the new package can't be found in the temp config
+egrep -q "^$1$" "$tmp_config" \
+    || error "tried and failed to add package"
+
+# fail if the temp config isn't one line longer than the old
+[[ $(( $(wc -l "$DEVELVERSION_CONF" | sed 's|\ .*$||') + 1 )) = $(wc -l "$tmp_config" | sed 's|\ .*$||') ]] \
+    || error "package already contained in $DEVELVERSION_CONF"
+
+# Things should be good if we haven't failed yet, so let's make the new config official and cleanup
+mv "$tmp_config" "$DEVELVERSION_CONF"
+tmpdir_cleanup
+

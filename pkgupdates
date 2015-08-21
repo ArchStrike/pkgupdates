@@ -1,0 +1,936 @@
+#!/usr/bin/env bash
+
+#
+# pkgupdates: The package version checking system for the ArchStrike repo
+#
+# Written by Kevin MacMartin for the ArchStrike project
+#
+# Released under the MIT license
+#
+
+# Unset variables we don't expect
+
+while read -r; do
+    [[ ! "$REPLY" =~ ^(PKGUPDATES_ARCH|PKGUPDATES_CONFIG|PKGUPDATES_TMPDIR|PKGREPO_DOMAIN|GITREPO_URL|ARCHVERSION_CONF|BASH[^=]*|DEVELVERSION_CONF|EUID|HOME|NOVERSION|PATH|PPID|PWD|REPODIR|SENDMAIL_CONF|SHELLOPTS|SHELL|SHLVL|SSH_AUTH_SOCK|TERM|UID|UPDATESCRIPT|_)= && "$REPLY" =~ ^[^=\ ][^=\ ]*= ]] \
+        && unset "${BASH_REMATCH[0]%=*}"
+done < <(set -o posix ; set)
+
+# Store information about the script and change to the script directory
+script_name="${0//*\/}"
+script_dir="${0%$script_name}"
+if [[ -z "$script_dir" ]]; then
+    script_dir="$PWD"
+else
+    pushd "$script_dir" >/dev/null
+    script_dir="$PWD"
+    popd >/dev/null
+fi
+cd "$script_dir"
+
+# The config file to load/create
+PKGUPDATES_CONFIG=${PKGUPDATES_CONFIG:="$script_dir/pkgupdates.conf"}
+
+# If the config can't be found, create a new one
+[[ -e "$PKGUPDATES_CONFIG" ]] || {
+    {
+        printf '%s\n'   '# Path of the repo used for devel version checks'
+        printf '%s\n\n' 'REPODIR="$PWD/pkgrepo"'
+        printf '%s\n'   '# URL of the PKGBUILD git repo'
+        printf '%s\n\n' 'GITREPO_URL="https://github.com/ArchStrike/ArchStrike.git"'
+        printf '%s\n'   '# Path of the archversion config file'
+        printf '%s\n\n' 'ARCHVERSION_CONF="$PWD/archversion.conf"'
+        printf '%s\n'   '# Path of the archversion sendmail config file'
+        printf '%s\n\n' 'SENDMAIL_CONF="$PWD/sendmail.conf"'
+        printf '%s\n'   '# Path of the file containing the list of VS packages'
+        printf '%s\n\n' 'DEVELVERSION_CONF="$PWD/develversion.conf"'
+        printf '%s\n'   '# Path of the devel update script that should be run with the -u flag'
+        printf '%s\n\n' 'UPDATESCRIPT="$PWD/pkgupdate.sh"'
+        printf '%s\n'   '# Path to the list of packages known to not have checkable versions'
+        printf '%s\n\n' 'NOVERSION="$PWD/noversion.txt"'
+        printf '%s\n'   '# URL of the repo to take the list of current packages from'
+        printf '%s\n'   'PKGREPO_DOMAIN="https://repo.archstrike.org"'
+    } > "$PKGUPDATES_CONFIG"
+
+    printf '%s\n' "Generated settings file @ $PKGUPDATES_CONFIG"
+}
+
+# Load the config
+source "$PKGUPDATES_CONFIG"
+
+# Load any defaults that aren't in the config
+REPODIR=${REPODIR:="$script_dir/pkgrepo"}
+GITREPO_URL=${GITREPO_URL:='https://github.com/ArchStrike/ArchStrike.git'}
+PKGREPO_DOMAIN=${PKGREPO_DOMAIN:='https://repo.archstrike.org'}
+PKGUPDATES_ARCH=${PKGUPDATES_ARCH:='x86_64'}
+
+# Config file locations
+SENDMAIL_CONF=${SENDMAIL_CONF:="$script_dir/sendmail.conf"}
+ARCHVERSION_CONF=${ARCHVERSION_CONF:="$script_dir/archversion.conf"}
+DEVELVERSION_CONF=${DEVELVERSION_CONF:="$script_dir/develversion.conf"}
+UPDATESCRIPT=${UPDATESCRIPT:="$script_dir/pkgupdate.sh"}
+NOVERSION=${NOVERSION:="$script_dir/noversion.txt"}
+
+# Locations of temporary files and the archversion cache
+PKGUPDATES_TMPDIR=${PKGUPDATES_TMPDIR:='/tmp/pkgupdates'}
+archversion_cache="$PKGUPDATES_TMPDIR/archversion.cache"
+archversion_tmpconf="$PKGUPDATES_TMPDIR/upversion.tmp.conf"
+versioncomp_tmpdb="$PKGUPDATES_TMPDIR/versioncomp.db"
+
+# Lock files
+archversion_lock_file="$PKGUPDATES_TMPDIR/archversion.lock"
+develversion_lock_file="$PKGUPDATES_TMPDIR/develversion.lock"
+versioncomp_lock_file="$PKGUPDATES_TMPDIR/versioncomp.lock"
+git_lock_file="$PKGUPDATES_TMPDIR/git.lock"
+
+# Lock states
+archversion_lock=0
+develversion_lock=0
+versioncomp_lock=0
+git_lock=0
+
+# Arrays containing the list of packages to check
+declare -a archversion_pkglist=() develversion_pkglist=()
+
+# The list of required dependencies checked for in $PATH at startup
+dependencies=('archversion' 'curl' 'git' 'makepkg' 'sqlite3' 'tar' 'vercmp')
+
+# Colourscheme
+[[ -t 1 ]] && {
+    c_d=$'\e[1;30m' # DARK GREY
+    c_r=$'\e[1;31m' # RED
+    c_g=$'\e[1;32m' # GREEN
+    c_y=$'\e[1;33m' # YELLOW
+    c_b=$'\e[1;34m' # BLUE
+    c_m=$'\e[1;35m' # VIOLET
+    c_t=$'\e[1;36m' # TEAL
+    c_w=$'\e[1;37m' # WHITE
+    c_c=$'\e[0m'    # DISABLES COLOUR
+}
+
+# HELPER FUNCTION: Clean up lock files and exit with an error
+function cleanup_and_exit {
+    [[ "$archversion_lock" = '1' ]] \
+        && rm -f "$archversion_lock_file"
+
+    [[ "$develversion_lock" = '1' ]] \
+        && rm -f "$develversion_lock_file"
+
+    [[ "$versioncomp_lock" = '1' ]] \
+        && rm -f "$versioncomp_lock_file"
+
+    [[ "$git_lock" = '1' ]] \
+        && rm -f "$git_lock_file"
+
+    exit 1
+}
+
+# HELPER FUNCTION: Commands to run when a SIGINT is passed to the script
+function ctrlc {
+    printf '\n%s\n' 'Received CTRL-C, quitting...'
+    cleanup_and_exit
+}
+
+# HELPER FUNCTION: Display a warning
+function warn {
+    printf '%s %s\n' "${c_y}WARNING:$c_c" "$1" >&2
+}
+
+# HELPER FUNCTION: Display an error and optionally cleanup/quit
+function error {
+    printf '%s %s\n' "${c_r}ERROR:$c_c" "$1" >&2
+    case "$2" in
+        1) cleanup_and_exit ;;
+        2) printf '\n'; help_function 1 ;;
+    esac
+}
+
+# HELPER FUNCTION: Set settings variables depending on the arguments pasted to this function
+function paramparse {
+    case "$1" in
+        -a|a)
+            git_author_show=1
+            ;;
+        -c|c)
+            archversion=1
+            ;;
+        -b|b)
+            debugversion=1
+            ;;
+        -d|d)
+            develversion=1
+            ;;
+        -D|D)
+            git_date_show=1
+            ;;
+        -e|e)
+            checkexist=1
+            ;;
+        -m|m)
+            checkmissing=1
+            ;;
+        -n|n)
+            newonly=1
+            ;;
+        -u|u)
+            updateversion=1
+            ;;
+        -v|v)
+            versioncomp=1
+            ;;
+        -x|x)
+            examples
+            ;;
+        -h|h|--help)
+            help_function 0
+            ;;
+        *)
+            error "Invalid argument '$1'" 2
+            ;;
+    esac
+}
+
+# HELPER FUNCTION: Outputs git info from the most recent commit
+function git_info {
+    if [[ -d "$REPODIR/packages/$1" ]]; then
+        pushd "$REPODIR" >/dev/null
+
+        # Print opening bracket
+        printf ' %s' "$c_b($c_w"
+
+        # Print the git author
+        [[ -n "$git_author_show" ]] && {
+            while read -r; do
+                [[ "$REPLY" =~ ^Author: && "$REPLY" =~ \<[^\>]*\> ]] && {
+                    printf '%s' "${BASH_REMATCH[0]//[\<\>]}"
+                    break
+                }
+            done < <(git log "packages/$1")
+        }
+
+        # Print space if both types of data should be displayed
+        [[ -n "$git_author_show" ]] && [[ -n "$git_date_show" ]] \
+            && printf ' %s ' "$c_b@$c_w"
+
+        # Print the git date
+        [[ -n "$git_date_show" ]] && {
+            while read -r; do
+                [[ "$REPLY" =~ ^Date: && "$REPLY" =~ [0-9][0-9\-]*\ *$ ]] && {
+                    printf '%s' "${BASH_REMATCH[0]}"
+                    break
+                }
+            done < <(git log --date=short "packages/$1")
+        }
+
+        # Print the closing bracket
+        printf '%s\n' "$c_b)$c_w"
+        popd >/dev/null
+    else
+        printf ' %s' "$c_b(${c_m}missing from git$c_b)$c_c"
+    fi
+}
+
+# HELPER FUNCTION: Output readible results of a version comparison
+function vercomp_display {
+    local author=''
+    local divider="$c_b|$c_c"
+    local pacname="$c_b[$c_w$1$c_b]$c_c"
+    local upver_display="${c_y}up: $2$c_c"
+    local pkgver_display="$3"
+    [[ -n "$4" ]] \
+        && pkgver_display="$pkgver_display $divider $4"
+
+    # Find the most recent git author for the package if $git_author_show is set
+    if [ -n "$git_author_show" ] || [ -n "$git_date_show" ]; then
+        author="$(git_info "$1")"
+    fi
+
+    # Display formatted version comparison
+    printf '%s\n' "$pacname $upver_display $divider $pkgver_display$author"
+}
+
+# HELPER FUNCTION: Compares two versions and sends result + colour to input vars
+function vercmp_check {
+    local _cmpresult="$1"
+    local _cmpcolour="$2"
+
+    cmpresult="$(vercmp "$3" "$4")"
+    eval $_cmpresult="'$cmpresult'"
+
+    if (( cmpresult > 0 )); then
+        eval $_cmpcolour="'$c_r'" #up>package
+    elif (( cmpresult < 0 )); then
+        eval $_cmpcolour="'$c_m'" #up<package
+    else
+        eval $_cmpcolour="'$c_g'" #up=package
+    fi
+}
+
+# HELPER FUNCTION: Compare the upstream version against 1-2 package version(s)
+function vercmp_handle {
+    local package="$1"
+    local upver="$2"
+    local pkgver=("$3" "$4")
+
+    # Test the first version passed to the function
+    vercmp_check cmpresult cmpcolour "$upver" "${pkgver[0]}"
+    local vercmp="$cmpresult"
+    pkgver[0]="${cmpcolour}pacman: ${pkgver[0]}$c_c"
+
+    # Test the second version passed to the function if it exists
+    [[ -n "${pkgver[1]}" ]] && {
+        vercmp_check cmpresult cmpcolour "$upver" "${pkgver[1]}"
+        (( cmpresult > vercmp )) \
+            && vercmp="$cmpresult"
+        pkgver[0]="${pkgver[0]/pacman/live}"
+        pkgver[1]="${cmpcolour}git: ${pkgver[1]}$c_c"
+    }
+
+    if (( vercmp > 0 )); then
+        vercomp_display "$package" "$upver" "${pkgver[0]}" "${pkgver[1]}"
+        [[ -n "$updateversion" ]] \
+            && "$UPDATESCRIPT" "$package" "$upver"
+    elif (( vercmp < 0 )); then
+        [[ -z "$newonly" ]] \
+            && vercomp_display "$package" "$upver" "${pkgver[0]}" "${pkgver[1]}"
+    else
+        [[ -z "$newonly" ]] \
+            && vercomp_display "$package" "$upver" "${pkgver[0]}" "${pkgver[1]}"
+    fi
+}
+
+# HELPER FUNCTION: (Re)-Initialize the pkgupdates repo
+function init_gitrepo {
+    [[ ! -f "$git_lock_file" ]] && {
+        git_lock=1
+        touch "$git_lock_file"
+        if [[ -d "$REPODIR" ]]; then
+            # Setup/update repo
+            cd "$REPODIR"
+            # Reset and update the repo
+            git reset --hard >/dev/null 2>&1
+            git pull >/dev/null 2>&1
+        else
+            # Clone the repo and checkout updates
+            git clone "$GITREPO_URL" "$REPODIR" >/dev/null 2>&1
+            cd "$REPODIR"
+            git checkout updates >/dev/null 2>&1
+        fi
+        rm -f "$git_lock_file"
+        git_lock=0
+    }
+}
+
+function load_repodb {
+    # Load the latest DB for the pkgdir's arch into repo_packages and fail if it's empty or the fails don't contain $1
+    local tmp_pkg='' tmp_packages="$(curl -s -0 "$PKGREPO_DOMAIN/archstrike/archstrike/os/$1/archstrike.db" | tar Jt)"
+
+    # Display an error if the repo db couldn't be downloaded
+    [[ -n "${tmp_packages[*]}" ]] || {
+        printf '\n'
+        error "The package db for $1 could not be downloaded from $PKGREPO_DOMAIN" 1
+    }
+
+    # Display an error if the repo db is corrupt
+    while read -r; do
+        [[ "${REPLY/\/*}" =~ ^[[:alnum:]].*-[^-]*-[0-9]*$ ]] || {
+            printf '\n'
+            error "The downloaded package db for $1 contains invalid data" 1
+        }
+        tmp_pkg="${REPLY/\/*}"
+        if [[ ! "${repo_packages[*]}" =~ $tmp_pkg ]]; then
+            repo_packages=( "${repo_packages[@]}" "$tmp_pkg" )
+        fi
+    done <<< "$tmp_packages"
+}
+
+# DEVELVERSION: VCS package version check
+function develversion_function {
+    # Declare the repo package array
+    declare -a repo_packages=()
+
+    # Fail if the development version config file is missing
+    [[ ! -f "$DEVELVERSION_CONF" ]] \
+        && error "$DEVELVERSION_CONF is missing" 1
+
+    # Declare $repo_packages then initialize it with the load_repodb function
+    load_repodb "$PKGUPDATES_ARCH"
+
+    # Load each uncommented package in $DEVELVERSION_CONF if a list isn't already declared
+    [[ -z "${develversion_pkglist[*]}" ]] && {
+        while read -r; do
+            [[ "$REPLY" =~ ^\ *[^\ \#][^\#]* ]] \
+                && develversion_pkglist=( "${develversion_pkglist[@]}" "${BASH_REMATCH[0]}" )
+        done < "$DEVELVERSION_CONF"
+    }
+
+    # Run for each package defined in the $develversion_pkglist
+    for pkg in "${develversion_pkglist[@]}"; do
+        # Skip packages in the ignore_pkglist
+        ignore=0
+        for ignorepkg in "${ignore_pkglist[@]}"; do
+            [[ "$pkg" =~ ^$ignorepkg$ ]] \
+                && ignore=1
+        done
+        (( ignore == 0 && ${#include_pkglist[@]} > 0 )) && {
+            tmpignore=1
+            for includepkg in "${include_pkglist[@]}"; do
+                [[ "$pkg" =~ ^$includepkg$ ]] \
+                    && tmpignore=0
+            done
+            (( tmpignore == 1 )) && ignore=1
+            unset tmpignore
+        }
+        (( ignore == 1 )) \
+            && continue
+
+        [[ ! "$pkg" =~ ^\ *# ]] && {
+            # Error+skip if ${pkg}/PKGBUILD is missing, otherwise enter the package folder
+            [[ -f "$REPODIR/packages/$pkg/PKGBUILD" ]] || {
+                printf '%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'Could not locate in repo' >&2
+                continue
+            }
+
+            # Enter the repo folder
+            pushd "$REPODIR/packages/$pkg" >/dev/null
+
+            # Exit and skip this package if a pkgver() function doesn't exist
+            [[ "$(<PKGBUILD)" =~ pkgver\ *\( ]] || {
+                printf '%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" "Package doesn't contain a pkgver() function" >&2
+                popd >/dev/null
+                continue
+            }
+
+            # Reset the PKGBUILD and save the pkgver() function
+            git checkout PKGBUILD
+            printing=0
+            pkgver_funct="$(while read -r; do
+                case "$printing" in
+                    0)
+                        [[ "$REPLY" =~ ^\ *pkgver\ *\(\)\ *\{ ]] && {
+                            printf '%s\n' "$REPLY"
+                            printing=1
+                        }
+                        ;;
+                    1)
+                        printf '%s\n' "$REPLY"
+                        [[ "$REPLY" =~ ^[^\{\}]*\} ]] \
+                            && break
+                        ;;
+                esac
+            done < PKGBUILD)"
+
+            # remove all its functions except pkgver()
+            printing=1
+            pkgbuild="$(while read -r; do
+                case "$printing" in
+                    1)
+                        if [[ "$REPLY" =~ ^\ *[a-zA-Z]*\(\)\ *\{ ]]; then
+                            printing=0
+                        else
+                            [[ ! "$REPLY" =~ ^\ *$ ]] \
+                                && printf '%s\n' "$REPLY"
+                        fi
+                        ;;
+                    0)
+                        [[ "$REPLY" =~ ^[^\{\}]*\} ]] \
+                            && printing=1
+                        ;;
+                esac
+            done < PKGBUILD)"
+            printf '%s\n' "$pkgbuild" > PKGBUILD
+            printf '%s\n' "$pkgver_funct" >> PKGBUILD
+            unset pkgver_funct printing pkgbuild
+
+            # Calculate the full package version, including epoch (if applicable), pkgver and pkgrel
+            unset pkgname epoch pkgver pkgrel
+            source PKGBUILD
+            [[ -n "$epoch" ]] && epoch="$epoch:"
+            pacver="$epoch$pkgver-$pkgrel"
+
+            # Exit with an error if $pkgname doesn't match $pkg
+            [[ "$pkgname" = "$pkg" ]] || {
+                printf '%s %s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'The real pkgname is' "$c_m$pkgname$c_c" >&2
+                popd >/dev/null
+                continue
+            }
+
+            # Create a blank package function (or a blank one for each split package)
+            if [[ "${#pkgname[*]}" = 1 ]]; then
+                # If this is not a split package, add one package() to the PKGBUILD
+                printf '%s\n    %s\n%s\n' 'package() {' 'return 0' '}' >> PKGBUILD
+            else
+                # If this is a split package, add one package() per split to the PKGBUILD
+                for name in "${pkgname[@]}"; do
+                    printf '%s\n    %s\n%s\n' "package_$name() {" 'return 0' '}' >> PKGBUILD
+                done
+            fi
+
+            # Unset all checksums then add each VCS source and an associated 'SKIP' checksum to the PKGBUILD
+            printf '%s\n' 'unset md5sums sha1sums sha256sums sha384sums sha512sums' >> PKGBUILD
+            src_array='source=('
+            sha_array='sha512sums=('
+            printf '\n' >> PKGBUILD
+            for src in "${source[@]}"; do
+                [[ "${src/*::}" =~ ^\ *(bzr|csv|git|hg|darcs|svn)[^a-zA-Z0-9] ]] && {
+                    src_array="$src_array '$src'"
+                    sha_array="$sha_array 'SKIP'"
+                }
+            done
+            printf '%s\n' "${src_array/\( /\(})" >> PKGBUILD
+            printf '%s\n' "${sha_array/\( /\(})" >> PKGBUILD
+
+            # Remove src if necessary then update the PKGBUILD using makepkg
+            [[ -d 'src' ]] \
+                && rm -rf src
+            makepkg -oAd >/dev/null 2>&1
+            (( $? )) && {
+                for dir in *; do
+                    [[ -d "$dir" ]] && rm -rf "$dir"
+                done
+                updatelog="$(makepkg -oAd -A 2>&1)"
+                (( $? )) && {
+                    popd >/dev/null
+                    printf '\n%s %s %s\n%s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'Could not update sources' "${c_m}Log:$c_w" "$updatelog$c_c" >&2
+                    continue
+                }
+            }
+
+            # Parse the updated PKGBUILD to find the upstream package version
+            unset epoch pkgver pkgrel
+            while read -r; do
+                [[ "$REPLY" =~ ^\ *(epoch|pkgver|pkgrel|_[[:alnum:]_]*)\ *= ]] \
+                    && eval "$REPLY"
+            done < 'PKGBUILD'
+            [[ -n "$epoch" ]] && epoch="${epoch}:"
+            upver="$epoch${pkgver}-$pkgrel"
+            unset epoch pkgver pkgrel
+            popd >/dev/null
+
+            # Compare the repo and pacman db package versions against the upstream package version and output the results
+            pacdb_info="$(
+                for package in "${repo_packages[@]}"; do
+                    [[ "$package" =~ ^\ *$pkg-[^-][^-]*-[0-9][0-9]*\ *$ ]] \
+                        && printf '%s' "$package"
+                done
+            )"
+            [[ -z "$pacdb_info" ]] && {
+                printf '%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'Unable to locate in the package database' >&2
+                continue
+            }
+            # Parse the pacman db info for its version and use it if newer than the repo package, then compare against upstream
+            [[ "$pacdb_info" =~ -[^-]*-[^-]*$ ]] \
+                && pacdb_pacver="${BASH_REMATCH[0]/-}"
+            # Compare the upstream version again the pacman version, or both the db and git pacman versions if they differ
+            if [ "$pacdb_pacver" = "$pacver" ]; then
+                vercmp_handle "$pkg" "$upver" "$pacver"
+            else
+                vercmp_handle "$pkg" "$upver" "$pacdb_pacver" "$pacver"
+            fi
+        }
+    done
+}
+
+# ARCHVERSION: Packge version check
+function archversion_function {
+    # Fail if the development version config file is missing
+    [[ ! -f "$ARCHVERSION_CONF" ]] && {
+        printf '%s\n' "$ARCHVERSION_CONF is missing"
+        cleanup_and_exit
+    }
+
+    # Create a vanilla archversion cache file if one doesn't already exist
+    [[ ! -f "$archversion_cache" ]] \
+        && printf '%s\n' '{"downstream": {}, "compare": {}}' > "$archversion_cache"
+
+    # Load each uncommented package in $ARCHVERSION_CONF if a list isn't already declared
+    [[ -z "${archversion_pkglist[*]}" ]] && {
+        while read -r; do
+            [[ ! "$REPLY" =~ \[DEFAULT\] && "$REPLY" =~ ^\ *\[[^][]*\]\ *$ ]] \
+                && archversion_pkglist=( "${archversion_pkglist[@]}" "${REPLY//[\[\]]}" )
+        done < "$ARCHVERSION_CONF"
+    }
+
+    # Run for each package defined in the $archversion_pkglist
+    for pkg in "${archversion_pkglist[@]}"; do
+        # Skip packages in the ignore_pkglist
+        ignore=0
+        for ignorepkg in "${ignore_pkglist[@]}"; do
+            [[ "$pkg" =~ ^$ignorepkg$ ]] \
+                && ignore=1
+        done
+        (( ignore == 0 && ${#include_pkglist[@]} > 0 )) && {
+            tmpignore=1
+            for includepkg in "${include_pkglist[@]}"; do
+                [[ "$pkg" =~ ^$includepkg$ ]] \
+                    && tmpignore=0
+            done
+            (( tmpignore == 1 )) && ignore=1
+            unset tmpignore
+        }
+        (( ignore == 1 )) \
+            && continue
+
+        # Write (or write over) the config file with a template for everything above packages
+        printf '' > "$archversion_tmpconf"
+        while read -r; do
+            printf '%s\n' "$REPLY" >> "$archversion_tmpconf"
+            [[ "$REPLY" =~ ^\ *$ ]] \
+                && break
+        done < "$ARCHVERSION_CONF"
+
+        # Define $pkgdef as an empty archversion.conf template then add the $pkg entry from $ARCHVERSION_CONF
+        if [[ "$(<"$ARCHVERSION_CONF")" =~ \[\ *$pkg\ *\] ]]; then
+            printing=0
+            pkgdef="$(
+                while read -r; do
+                    [[ "$REPLY" =~ ^\ *\[$pkg\]\ *$ ]] \
+                        && printing=1
+                    [[ "$printing" = 1 ]] && {
+                        [[ "$REPLY" =~ ^\ *$ ]] \
+                            && break
+                        printf '%s\n' "$REPLY"
+                    }
+                done < "$ARCHVERSION_CONF"
+            )"
+        else
+            pkgdef="[$pkg]"
+        fi
+
+        # Add the definition to the package
+        printf '%s\n\n' "$pkgdef" >> "$archversion_tmpconf"
+
+        # Grab the simple archversion output for parsing
+        if [[ "$debugversion" = '1' ]]; then
+            CONFIG_PACKAGES="$archversion_tmpconf" CACHE_PACKAGES="$archversion_cache" archversion --debug check
+            printf '\n'
+        else
+            av_output="$(CONFIG_PACKAGES="$archversion_tmpconf" CACHE_PACKAGES="$archversion_cache" archversion check 2>&1)"
+            if [[ "$av_output" =~ ^\ *\[ ]]; then
+                upver="${av_output/*up: }"
+                upver="${upver/ *}"
+                pacver="${av_output/*pacman: }"
+
+                # Set the $pkgver from the PKGBUILD for the $pkg if it exists
+                [[ -f "$REPODIR/packages/$pkg/PKGBUILD" ]] && {
+                    unset pkgver
+                    while read -r; do
+                        [[ "$REPLY" =~ ^\ *(pkgver|_[[:alnum:]_]*)\ *= && ! "$REPLY" =~ [\)\(\`\|\&\>\<] ]] \
+                            && eval "$REPLY"
+                    done < "$REPODIR/packages/$pkg/PKGBUILD"
+                }
+
+                # Compare the upstream version again the pacman version, or both the db and git pacman versions if they differ
+                if [[ -n "$pkgver" && ! "$pacver" = "${pkgver%-*}" ]]; then
+                    vercmp_handle "$pkg" "$upver" "$pacver" "$pkgver"
+                else
+                    vercmp_handle "$pkg" "$upver" "$pacver"
+                fi
+
+                # Add a blank line after each package when running debug for easier parsing
+                [[ -n "$debugversion" ]] \
+                    && printf '\n'
+
+                # Remove the tmp config
+                [[ -f "$archversion_tmpconf" ]] \
+                    && rm "$archversion_tmpconf"
+            else
+                printf '%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" "$(head -n 1 <<< "${av_output/ERROR: }")" >&2
+            fi
+        fi
+    done
+}
+
+# CHECKMISSING: Undefined package check
+function check_function {
+    # Create lists of packages contained in the archversion, develversion and noversion configs
+    declare -a archversion_packages=() develversion_packages=() noversion_packages=()
+    while read -r; do
+        [[ "$REPLY" =~ ^\ *\[[^\]]*\]\ * && ! "$REPLY" =~ ^\ *\[DEFAULT\]\ *$ && "${REPLY//[\[\]]}" =~ ^\ *[^\ ]* ]] \
+            && archversion_packages=( "${archversion_packages[@]}" "${BASH_REMATCH[0]}" )
+    done < "$ARCHVERSION_CONF"
+    while read -r; do
+        [[ ! "$REPLY" =~ ^\ *\# ]] \
+            && develversion_packages=( "${develversion_packages[@]}" "$REPLY" )
+    done < "$DEVELVERSION_CONF"
+    while read -r; do
+        [[ "$REPLY" =~ ^\ *\[[^\]]*\]\ * && "${BASH_REMATCH[0]//[\[\]]}" =~ ^\ *[^\ ]* ]] \
+            && noversion_packages=( "${noversion_packages[@]}" "${BASH_REMATCH[0]}" )
+    done < "$NOVERSION"
+
+    # Check for packages with version checks that don't exist upstream
+    [[ -n "$checkexist" ]] && {
+        # Find each "invalid" package: update checks configured for non-repo packages
+        declare -a nonexistent_pkgs=()
+        for pkg in "${archversion_packages[@]}"; do
+            [[ -d "$REPODIR/packages/$pkg" ]] \
+                || nonexistent_pkgs=( "${nonexistent_pkgs[@]}" "$c_b${ARCHVERSION_CONF/*\/}$c_c $c_y$pkg$c_c" )
+        done
+        for pkg in "${develversion_packages[@]}"; do
+            [[ -d "$REPODIR/packages/$pkg" ]] \
+                || nonexistent_pkgs=( "${nonexistent_pkgs[@]}" "$c_b${DEVELVERSION_CONF/*\/}$c_c $c_y$pkg$c_c" )
+        done
+        for pkg in "${noversion_packages[@]}"; do
+            [[ -d "$REPODIR/packages/$pkg" ]] \
+                || nonexistent_pkgs=( "${nonexistent_pkgs[@]}" "$c_b${NOVERSION/*\/}$c_c $c_y$pkg$c_c" )
+        done
+
+        # Display the number of nonexistent packages followed by a list of them
+        printf '\n%s' "$c_b[${c_w}nonexistent-packages$c_b]${c_c}:"
+        if [[ -n "${nonexistent_pkgs[*]}" ]]; then
+            # display how many packages don't exist
+            printf '%s\n\n' "$c_r${#nonexistent_pkgs[@]}$c_c"
+            # display the list of packages packages that don't exist
+            for pkg in "${nonexistent_pkgs[@]}"; do
+                printf '%s\n' "$pkg"
+            done
+        else
+            printf '%s\n' "${c_g}0$c_c"
+        fi
+
+        # Add space after this function if also checking for missing packages
+        [[ -z "$checkmissing" ]] \
+            && printf '\n'
+
+        # Cleanup
+        unset nonexistent_pkgs
+    }
+
+    # Run this functionality if the option to check missing packages is set
+    [[ -n "$checkmissing" ]] && {
+        # Find each "missing" package in the repo that isn't configured to have its version checked
+        declare -a missing_pkgs=()
+        local all_packages=" ${archversion_packages[*]} ${develversion_packages[*]} ${noversion_packages[*]} "
+        for pkg in "$REPODIR/packages/"*; do
+            [[ -d "$pkg" ]] && {
+                pkg="${pkg/*\/}"
+                [[ ! "$all_packages" =~ \ $pkg\  ]] \
+                    && missing_pkgs=( "${missing_pkgs[@]}" "$c_y$pkg$c_c" )
+            }
+        done
+
+        # Display the number of missing packages folowed by a list of them
+        printf '\n%s' "$c_b[${c_w}missing-packages$c_b]${c_c}:"
+        if [[ -n "${missing_pkgs[*]}" ]]; then
+            # Display how many packages are missing
+            printf '%s\n\n' "$c_r${#missing_pkgs[@]}$c_c"
+            # Display the list of missing packages
+            for pkg in "${missing_pkgs[@]}"; do
+                printf '%s\n' "$pkg"
+            done
+        else
+            printf '%s\n' "${c_g}0$c_c"
+        fi
+        printf '\n'
+
+        # Cleanup
+        unset missing_pkgs
+    }
+}
+
+# VERSIONCOMP: Compare versions between each arch
+function versioncompare_function {
+    declare -a arch_list=('i686' 'x86_64' 'armv6h' 'armv7h')
+    local pkgname='' pkgver=''
+
+    [[ -f "$versioncomp_tmpdb" ]] \
+        && rm "$versioncomp_tmpdb"
+    sqlite3 "$versioncomp_tmpdb" "CREATE TABLE IF NOT EXISTS VERSIONLIST(package TEXT PRIMARY KEY NOT NULL, i686 TEXT, x86_64 TEXT, armv6h TEXT, armv7h TEXT);"
+
+    for repo_arch in "${arch_list[@]}"; do
+        printf '%s %s' 'Downloading and parsing the repo db for' "$c_b$repo_arch${c_c}..."
+        load_repodb "$repo_arch"
+        for pkg in "${repo_packages[@]}"; do
+            pkgname="${pkg%-*}"
+            pkgname="${pkgname%-*}"
+            pkgver="${pkg/${pkgname}-}"
+
+            # Create a record for packages that haven't been seen or update a package with one for ones that have
+            if [[ $(sqlite3 "$versioncomp_tmpdb" "SELECT * FROM VERSIONLIST WHERE package='$pkgname';") ]]; then
+                sqlite3 "$versioncomp_tmpdb" "UPDATE VERSIONLIST SET $repo_arch='$pkgver' WHERE package='$pkgname';"
+            else
+                sqlite3 "$versioncomp_tmpdb" "INSERT INTO VERSIONLIST(package,$repo_arch) VALUES('$pkgname','$pkgver');"
+            fi
+        done
+        printf '%s\n' "${c_g}DONE!$c_c"
+    done
+    printf '\n'
+
+    for pkg in $(sqlite3 "$versioncomp_tmpdb" "SELECT * FROM VERSIONLIST;"); do
+        pkgver=("$(cut -d '|' -f 2 <<< "$pkg")" "$(cut -d '|' -f 3 <<< "$pkg")" "$(cut -d '|' -f 4 <<< "$pkg")" "$(cut -d '|' -f 5 <<< "$pkg")")
+
+        [[ -n "$tmpver" ]] \
+            && unset tmpver
+        for version in "${pkgver[@]}"; do
+            if [[ -n "$version" ]]; then
+                if [[ -z "$tmpver" ]]; then
+                    tmpver="$version"
+                elif [[ ! "$tmpver" = "$version" ]]; then
+                    printf '%s\n' "$c_b$(cut -d '|' -f 1 <<< "$pkg")$c_c"
+                    printf '%8s %s\n' 'i686:' "$c_r${pkgver[0]}$c_c"
+                    printf '%8s %s\n' 'x86_64:' "$c_r${pkgver[1]}$c_c"
+                    printf '%8s %s\n' 'armv6h:' "$c_r${pkgver[2]}$c_c"
+                    printf '%8s %s\n\n' 'armv7h:' "$c_r${pkgver[3]}$c_c"
+                    break
+                fi
+            fi
+        done
+    done
+
+    # Cleanup
+    unset arch_list
+    [[ -f "$versioncomp_tmpdb" ]] \
+        && rm "$versioncomp_tmpdb"
+}
+
+# HELP: display usage information and available commands
+function help_function {
+    printf '\n%s\n' "${c_b}USAGE$c_c"
+    printf '  %s\n\n' "$c_y$script_name$c_c $c_d[${c_t}OPTIONS$c_d] [${c_t}PKGLIST$c_d] $c_g+include-regex$c_c $c_r^ignore-regex$c_c"
+    printf '%s\n' "${c_b}VERSION OPTIONS$c_c"
+    printf '  %-32s %s\n' "$c_w-c$c_d|${c_w}c$c_c" "check versions with ${c_m}archversion$c_c using $c_w${ARCHVERSION_CONF/$HOME/\~}$c_c"
+    printf '  %-32s %s\n' "$c_w-d$c_d|${c_w}d$c_c" "check versions for ${c_m}VCS packages$c_c using $c_w${DEVELVERSION_CONF/$HOME/\~}$c_c"
+    printf '  %-45s %s\n' "$c_d⤷$c_c $c_w-a$c_d|${c_w}a$c_c" "show the ${c_m}email$c_c of the author of the most recent commit for each package"
+    printf '  %-45s %s\n' "$c_d⤷$c_c $c_w-D$c_d|${c_w}D$c_c" "show the ${c_m}date$c_c of the most recent commit each package"
+    printf '  %-45s %s\n' "$c_d⤷$c_c $c_w-n$c_d|${c_w}n$c_c" "only display packages that have a new ${c_m}version$c_c available"
+    printf '  %-45s %s\n' "$c_d⤷$c_c $c_w-u$c_d|${c_w}u$c_c" "pass the pkgname of packages with new versions available to the ${c_m}update script"
+    printf '  %-45s %s\n\n' "$c_d⤷$c_c $c_w-b$c_d|${c_w}b$c_c" "display ${c_m}debugging$c_c information in output (only affects $c_w-c$c_d|${c_w}c$c_c)"
+    printf '%s\n' "${c_b}REVIEW OPTIONS$c_c"
+    printf '  %-32s %s\n' "$c_w-e$c_d|${c_w}e$c_c" "check for packages that have been configured but ${c_m}do not exist$c_c in git"
+    printf '  %-32s %s\n' "$c_w-m$c_d|${c_w}m$c_c" "check for packages in git that are ${c_m}missing$c_c from the configs"
+    printf '  %-32s %s\n\n' "$c_w-v$c_d|${c_w}v$c_c" "check for packages with ${c_m}different versions$c_c on each arch"
+    printf '%s\n' "${c_b}HELP OPTIONS$c_c"
+    printf '  %-32s %s\n' "$c_w-x$c_d|${c_w}x$c_c" "display some ${c_m}examples$c_c of custom version checks using regular expressions"
+    printf '  %-32s %s\n\n' "$c_w-h$c_d|${c_w}h$c_c" "display this ${c_m}usage information$c_c and list of options"
+    exit "$1"
+}
+
+function examples {
+    printf '\n%s\n\n' "${c_w}Regular expressions can be used to ${c_g}include$c_w or ${c_r}exclude$c_w matching scripts:"
+    printf '  %-56s %s\n' "$c_y$script_name $c_b-c $c_g+bmon" "$c_d|$c_w check the ${c_m}archversion.conf$c_w package ${c_g}bmon$c_c"
+    printf '  %-56s %s\n' "$c_y$script_name $c_b-cd $c_g+pipal +cjdns-git" "$c_d|$c_w check the ${c_g}pipal$c_w and ${c_g}cjdns-git$c_w packages$c_c"
+    printf '  %-56s %s\n' "$c_y$script_name $c_b-cd $c_g+python-.*" "$c_d|$c_w check ${c_m}all$c_w packages matching ${c_g}python-*$c_c"
+    printf '  %-60s %s\n' "$c_y$script_name $c_b-cd $c_g+python2-.* $c_r^.*-net.*" "$c_d|$c_w check ${c_m}all$c_w packages matching ${c_g}python2-*$c_w except those matching ${c_r}*-net*$c_c"
+    printf '  %-56s %s\n' "$c_y$script_name $c_b-cd $c_r^ruby-.*" "$c_d|$c_w check ${c_m}all$c_w packages except ones matching ${c_r}ruby-*$c_c"
+    printf '  %-63s %s\n\n' "$c_y$script_name $c_b-cd $c_g+ruby-.* $c_r^ruby-ansi" "$c_d|$c_w check ${c_m}all$c_w packages matching ${c_g}ruby-*$c_c except ${c_r}ruby-ansi$c_c"
+    exit 0
+}
+
+trap 'ctrlc' SIGINT SIGQUIT
+
+# Install the temp directory if it doesn't exist
+[[ ! -d "$PKGUPDATES_TMPDIR" ]] \
+    && install -d "$PKGUPDATES_TMPDIR"
+
+# Show help if no options have been selected
+[[ -z "$1" ]] \
+    && help_function 0
+
+# Test for programs required by this script before running
+declare -a missing_dependencies=()
+for dep in "${dependencies[@]}"; do
+    type -P "$dep" >/dev/null \
+        || missing_dependencies=( ${missing_dependencies[@]} "$dep" )
+done
+[[ -n "${missing_dependencies[*]}" ]] && {
+    error "${c_w}missing dependencies ($(
+        for (( x=0; x < ${#missing_dependencies[@]}; x++ )); do
+            printf '%s' "$c_m${missing_dependencies[$x]}$c_c"
+            (( (( x + 1 )) < ${#missing_dependencies[@]} )) \
+                && printf '%s' ', '
+        done
+        unset x
+    )$c_w)$c_c" 1
+}
+
+# Parse command-line arguments
+declare -a ignore_pkglist=() include_pkglist=()
+for param in "$@"; do
+    if [[ "$param" =~ ^-[a-zA-Z][a-zA-Z]* ]]; then
+        for (( y=0; y<${#param}; y++ )); do
+            char="${param:$y:1}"
+            [[ ! "$char" =~ - ]] \
+                && paramparse "$char"
+            unset char
+        done
+        unset y
+    elif (( archversion == 1 || develversion == 1 )) && [[ "$param" =~ ^\+(.*) ]]; then
+        include_pkglist=( "${include_pkglist[@]}" "${BASH_REMATCH[1]}" )
+    elif  (( archversion == 1 || develversion == 1 )) && [[ "$param" =~ ^\^(.*) ]]; then
+        ignore_pkglist=( "${ignore_pkglist[@]}" "${BASH_REMATCH[1]}" )
+    else
+        paramparse "$param"
+    fi
+done
+
+[[ -z "$archversion" && -z "$develversion" ]] && {
+    # Check that c|-c and/or d|-d is selected if the a|-a option is selected
+    [[ -n "$git_author_show" ]] \
+        && error 'The author of recent commit option (-a|a) must be run with -c|c and/or -d|d' 1
+
+    # Check that c|-c and/or d|-d is selected if the D|-D option is selected
+    [[ -n "$git_date_show" ]] \
+        && error 'The date of recent commit option (-D|D) must be run with -c|c and/or -d|d' 1
+
+    # Check that c|-c and/or d|-d is selected if the n|-n option is selected
+    [[ -n "$newonly" ]] \
+        && error 'The new-only option (-n|n) must be run with -c|c and/or -d|d' 1
+
+    # Check that c|-c and/or d|-d is selected if the u|-u option is selected
+    [[ -n "$updateversion" ]] \
+        && error 'The update option (-u|u) must be run with -c|c and/or -d|d' 1
+}
+
+# Check that the c|-c option is selected if the b|-b option is selected
+[[ -z "$archversion" && -n "$debugversion" ]] \
+    && error 'The debug option (-b|b) must be run with -c|c' 1
+
+# Update the git repo
+[[ -n "$archversion" || -n "$develversion" ]] \
+    && [[ ! -e "$archversion_lock_file" && ! -e "$develversion_lock_file" ]] \
+        && init_gitrepo
+
+# Archversion
+[[ -n "$archversion" ]] && {
+    if [[ -e "$archversion_lock_file" ]]; then
+        warn 'Skipping the archversion function as it is already running'
+    else
+        archversion_lock=1
+        touch "$archversion_lock_file"
+        archversion_function
+        rm -f "$archversion_lock_file"
+        archversion_lock=0
+    fi
+}
+
+# Develversion
+[[ -n "$develversion" ]] && {
+    if [[ -e "$develversion_lock_file" ]]; then
+        warn 'Skipping the develversion function as it is already running'
+    else
+        develversion_lock=1
+        touch "$develversion_lock_file"
+        develversion_function
+        rm -f "$develversion_lock_file"
+        develversion_lock=0
+    fi
+}
+
+# Check (Missing|Existing)
+[[ -n "$checkmissing" || -n "$checkexist" ]] \
+    && check_function
+
+# Version Compare
+[[ -n "$versioncomp" ]] && {
+    if [[ -e "$versioncomp_lock_file" ]]; then
+        warn 'Skipping the version compare function as it is already running'
+    else
+        versioncomp_lock=1
+        touch "$versioncomp_lock_file"
+        versioncompare_function
+        rm -f "$versioncomp_lock_file"
+        versioncomp_lock=0
+    fi
+}
+
+exit 0
+

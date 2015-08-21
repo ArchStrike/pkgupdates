@@ -1,0 +1,6 @@
+CORE, EXTRA, TESTING +++
++++
+
+COMMUNITY +++
+|- libewf =(upstream)=> libewf
++++
