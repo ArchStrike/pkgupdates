@@ -88,6 +88,9 @@ develversion_lock=0
 versioncomp_lock=0
 git_lock=0
 
+# Package repo directories
+git_repodirs=('archstrike' 'archstrike-testing' 'pending')
+
 # Arrays containing the list of packages to check
 declare -a archversion_pkglist=() develversion_pkglist=()
 
@@ -384,14 +387,23 @@ function develversion_function {
             && continue
 
         [[ ! "$pkg" =~ ^\ *# ]] && {
-            # Error+skip if ${pkg}/PKGBUILD is missing, otherwise enter the package folder
-            [[ -f "$REPODIR/packages/$pkg/PKGBUILD" ]] || {
+            # Determine the repo directory the package is located in
+            unset repo_dir
+            for dir in "${git_repodirs[@]}"; do
+                if [[ -d "$REPODIR/$dir/$pkg" ]]; then
+                    repo_dir="$dir"
+                    break
+                fi
+            done
+
+            # Error+skip if the package doesn't exist in any of the ${git_repodirs[@]} directories or if ${pkg}/PKGBUILD is missing
+            [[ -z "$repo_dir" || -f "$REPODIR/$repo_dir/$pkg/PKGBUILD" ]] || {
                 printf '%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'Could not locate in repo' >&2
                 continue
             }
 
             # Enter the repo folder
-            pushd "$REPODIR/packages/$pkg" >/dev/null
+            pushd "$REPODIR/$repo_dir/$pkg" >/dev/null
 
             # Exit and skip this package if a pkgver() function doesn't exist
             [[ "$(<PKGBUILD)" =~ pkgver\ *\( ]] || {
@@ -610,13 +622,22 @@ function archversion_function {
                 upver="${upver/ *}"
                 pacver="${av_output/*pacman: }"
 
+                # Determine the repo directory the package is located in
+                unset repo_dir
+                for dir in "${git_repodirs[@]}"; do
+                    if [[ -d "$REPODIR/$dir/$pkg" ]]; then
+                        repo_dir="$dir"
+                        break
+                    fi
+                done
+
                 # Set the $pkgver from the PKGBUILD for the $pkg if it exists
-                [[ -f "$REPODIR/packages/$pkg/PKGBUILD" ]] && {
+                [[ -f "$REPODIR/$repo_dir/$pkg/PKGBUILD" ]] && {
                     unset pkgver
                     while read -r; do
                         [[ "$REPLY" =~ ^\ *(pkgver|_[[:alnum:]_]*)\ *= && ! "$REPLY" =~ [\)\(\`\|\&\>\<] ]] \
                             && eval "$REPLY"
-                    done < "$REPODIR/packages/$pkg/PKGBUILD"
+                    done < "$REPODIR/$repo_dir/$pkg/PKGBUILD"
                 }
 
                 # Compare the upstream version again the pacman version, or both the db and git pacman versions if they differ
@@ -662,15 +683,42 @@ function check_function {
         # Find each "invalid" package: update checks configured for non-repo packages
         declare -a nonexistent_pkgs=()
         for pkg in "${archversion_packages[@]}"; do
-            [[ -d "$REPODIR/packages/$pkg" ]] \
+            # Determine the repo directory the package is located in
+            unset repo_dir
+            for dir in "${git_repodirs[@]}"; do
+                if [[ -d "$REPODIR/$dir/$pkg" ]]; then
+                    repo_dir="$dir"
+                    break
+                fi
+            done
+
+            [[ -d "$REPODIR/$repo_dir/$pkg" ]] \
                 || nonexistent_pkgs=( "${nonexistent_pkgs[@]}" "$c_b${ARCHVERSION_CONF/*\/}$c_c $c_y$pkg$c_c" )
         done
         for pkg in "${develversion_packages[@]}"; do
-            [[ -d "$REPODIR/packages/$pkg" ]] \
+            # Determine the repo directory the package is located in
+            unset repo_dir
+            for dir in "${git_repodirs[@]}"; do
+                if [[ -d "$REPODIR/$dir/$pkg" ]]; then
+                    repo_dir="$dir"
+                    break
+                fi
+            done
+
+            [[ -d "$REPODIR/$repo_dir/$pkg" ]] \
                 || nonexistent_pkgs=( "${nonexistent_pkgs[@]}" "$c_b${DEVELVERSION_CONF/*\/}$c_c $c_y$pkg$c_c" )
         done
         for pkg in "${noversion_packages[@]}"; do
-            [[ -d "$REPODIR/packages/$pkg" ]] \
+            # Determine the repo directory the package is located in
+            unset repo_dir
+            for dir in "${git_repodirs[@]}"; do
+                if [[ -d "$REPODIR/$dir/$pkg" ]]; then
+                    repo_dir="$dir"
+                    break
+                fi
+            done
+
+            [[ -d "$REPODIR/$repo_dir/$pkg" ]] \
                 || nonexistent_pkgs=( "${nonexistent_pkgs[@]}" "$c_b${NOVERSION/*\/}$c_c $c_y$pkg$c_c" )
         done
 
@@ -700,12 +748,15 @@ function check_function {
         # Find each "missing" package in the repo that isn't configured to have its version checked
         declare -a missing_pkgs=()
         local all_packages=" ${archversion_packages[*]} ${develversion_packages[*]} ${noversion_packages[*]} "
-        for pkg in "$REPODIR/packages/"*; do
-            [[ -d "$pkg" ]] && {
-                pkg="${pkg/*\/}"
-                [[ ! "$all_packages" =~ \ $pkg\  ]] \
-                    && missing_pkgs=( "${missing_pkgs[@]}" "$c_y$pkg$c_c" )
-            }
+
+        for repo_dir in "${git_repodirs[@]}"; do
+            for pkg in "$REPODIR/$repo_dir/"*; do
+                [[ -d "$pkg" ]] && {
+                    pkg="${pkg/*\/}"
+                    [[ ! "$all_packages" =~ \ $pkg\  ]] \
+                        && missing_pkgs=( "${missing_pkgs[@]}" "$c_y$pkg$c_c" )
+                }
+            done
         done
 
         # Display the number of missing packages folowed by a list of them
