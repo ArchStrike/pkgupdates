@@ -44,7 +44,7 @@ PKGUPDATES_CONFIG=${PKGUPDATES_CONFIG:="$script_dir/pkgupdates.conf"}
         printf '%s\n'   '# Path of the file containing the list of VS packages'
         printf '%s\n\n' 'DEVELVERSION_CONF="$PWD/develversion.conf"'
         printf '%s\n'   '# Path of the devel update script that should be run with the -u flag'
-        printf '%s\n\n' 'UPDATESCRIPT="$PWD/pkgupdate.sh"'
+        printf '%s\n\n' 'UPDATESCRIPT="$PWD/pkgupdates-sample.sh"'
         printf '%s\n'   '# Path to the list of packages known to not have checkable versions'
         printf '%s\n\n' 'NOVERSION="$PWD/noversion.txt"'
         printf '%s\n'   '# URL of the repo to take the list of current packages from'
@@ -67,7 +67,7 @@ PKGUPDATES_ARCH=${PKGUPDATES_ARCH:='x86_64'}
 SENDMAIL_CONF=${SENDMAIL_CONF:="$script_dir/sendmail.conf"}
 ARCHVERSION_CONF=${ARCHVERSION_CONF:="$script_dir/archversion.conf"}
 DEVELVERSION_CONF=${DEVELVERSION_CONF:="$script_dir/develversion.conf"}
-UPDATESCRIPT=${UPDATESCRIPT:="$script_dir/pkgupdate.sh"}
+UPDATESCRIPT=${UPDATESCRIPT:="$script_dir/pkgupdates-sample.sh"}
 NOVERSION=${NOVERSION:="$script_dir/noversion.txt"}
 
 # Locations of temporary files and the archversion cache
