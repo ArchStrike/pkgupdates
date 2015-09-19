@@ -1,10 +1,6 @@
 pkgrepo
 pkgupdates.conf
 test.*.conf
-archversion-pkgupdates/pkg
-archversion-pkgupdates/src
-archversion-pkgupdates/archversion
-archversion-pkgupdates/archversion-pkgupdates-git*any.pkg.tar.xz
 pkgrepo-update/*
 .archversion.cache
 *.swp

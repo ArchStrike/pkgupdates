@@ -25,7 +25,7 @@ else
     script_dir="$PWD"
     popd >/dev/null
 fi
-cd "$script_dir"
+cd "$script_dir" || exit
 
 # The config file to load/create
 PKGUPDATES_CONFIG=${PKGUPDATES_CONFIG:="$script_dir/pkgupdates.conf"}
@@ -60,8 +60,8 @@ source "$PKGUPDATES_CONFIG"
 # Load any defaults that aren't in the config
 REPODIR=${REPODIR:="$script_dir/pkgrepo"}
 GITREPO_URL=${GITREPO_URL:='https://github.com/ArchStrike/ArchStrike.git'}
-PKGREPO_DOMAIN=${PKGREPO_DOMAIN:='https://repo.archstrike.org'}
-PKGUPDATES_ARCH=${PKGUPDATES_ARCH:='x86_64'}
+PKGREPO_DOMAIN=${PKGREPO_DOMAIN:='http://archstrike.org:81'}
+PKGUPDATES_ARCH=${PKGUPDATES_ARCH:='armv7h'}
 
 # Config file locations
 SENDMAIL_CONF=${SENDMAIL_CONF:="$script_dir/sendmail.conf"}
@@ -89,7 +89,7 @@ versioncomp_lock=0
 git_lock=0
 
 # Package repo directories
-git_repodirs=('archstrike' 'archstrike-testing' 'pending')
+git_repodirs=('archstrike' 'archstrike-testing')
 
 # Arrays containing the list of packages to check
 declare -a archversion_pkglist=() develversion_pkglist=()
@@ -325,7 +325,11 @@ function init_gitrepo {
 
 function load_repodb {
     # Load the latest DB for the pkgdir's arch into repo_packages and fail if it's empty or the fails don't contain $1
-    local tmp_pkg='' tmp_packages="$(curl -s -0 "$PKGREPO_DOMAIN/archstrike/archstrike/os/$1/archstrike.db" | tar Jt)"
+    local tmp_pkg='' tmp_packages='' arch="$1"
+
+    for repo in "${git_repodirs[@]}"; do
+        tmp_packages="$tmp_packages$(curl -s -0 "$PKGREPO_DOMAIN/repo/$arch/$repo/$repo.db" | tar zt)"
+    done
 
     # Display an error if the repo db couldn't be downloaded
     [[ -n "${tmp_packages[*]}" ]] || {
