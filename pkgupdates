@@ -48,7 +48,7 @@ PKGUPDATES_CONFIG=${PKGUPDATES_CONFIG:="$script_dir/pkgupdates.conf"}
         printf '%s\n'   '# Path to the list of packages known to not have checkable versions'
         printf '%s\n\n' 'NOVERSION="$PWD/noversion.txt"'
         printf '%s\n'   '# URL of the repo to take the list of current packages from'
-        printf '%s\n'   'PKGREPO_DOMAIN="https://repo.archstrike.org"'
+        printf '%s\n'   'PKGREPO_DOMAIN="http://archstrike.org:81"'
     } > "$PKGUPDATES_CONFIG"
 
     printf '%s\n' "Generated settings file @ $PKGUPDATES_CONFIG"
