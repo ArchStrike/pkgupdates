@@ -61,7 +61,7 @@ source "$PKGUPDATES_CONFIG"
 REPODIR=${REPODIR:="$script_dir/pkgrepo"}
 GITREPO_URL=${GITREPO_URL:='https://github.com/ArchStrike/ArchStrike.git'}
 PKGREPO_DOMAIN=${PKGREPO_DOMAIN:='http://archstrike.org:81'}
-PKGUPDATES_ARCH=${PKGUPDATES_ARCH:='armv7h'}
+PKGUPDATES_ARCH=${PKGUPDATES_ARCH:='x86_64'}
 
 # Config file locations
 SENDMAIL_CONF=${SENDMAIL_CONF:="$script_dir/sendmail.conf"}
