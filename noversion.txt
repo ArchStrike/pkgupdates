@@ -1,6 +1,6 @@
 [0trace]                     # one shot release in 2007 and there won't be more
-[3proxy]                     # archversion can't decode site (fails with: 'utf-8' codec can't decode)
 [3proxy-win32]               # archversion can't decode site (fails with: 'utf-8' codec can't decode)
+[3proxy]                     # archversion can't decode site (fails with: 'utf-8' codec can't decode)
 [admid-pack]                 # one shot release with no version information
 [admsnmp]                    # one shot release with no version information
 [asp-audit]                  # the original source is no longer available
@@ -17,17 +17,17 @@
 [casefile]                   # website uses ajax to generate download
 [cisco-router-config]        # no online assets
 [cisco-torch]                # no download link
-[pdfminer]                   # specific version required by w3af
 [darkmysqli]                 # One shot release in 2010 and there won't be more
-[python2-nmap]               # locked at v0.1.4 per authors site
-[proxyp]                     # has not been updated since 2013-12-06
-[tpcat]                      # Src is a single python file has not been touched since 2009
-[tcptraceroute]              # Authors website is down project is dead
-[umit]                       # Project is shutdown per pkgurl
-[mausezahn]                  # per site the pkg is version locked and its replacement is netsniff-ng
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
-[webscarab]                  # is no longer maintained is replaced by zap proxy
-[vnc-bypauth]                # A single shot no more releases
 [list-urls]                  # src is dead ne shot release
-[ohrwurm]		     # src is dead, was last updated 2010
-[wmat]			     # src website is dead
+[mausezahn]                  # per site the pkg is version locked and its replacement is netsniff-ng
+[ohrwurm]		             # src is dead, was last updated 2010
+[pdfminer]                   # specific version required by w3af
+[proxyp]                     # has not been updated since 2013-12-06
+[python2-nmap]               # locked at v0.1.4 per authors site
+[tcptraceroute]              # Authors website is down project is dead
+[tpcat]                      # Src is a single python file has not been touched since 2009
+[umit]                       # Project is shutdown per pkgurl
+[vnc-bypauth]                # A single shot no more releases
+[webscarab]                  # is no longer maintained is replaced by zap proxy
+[wmat]			             # src website is dead
