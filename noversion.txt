@@ -1,6 +1,4 @@
 [0trace]                     # one shot release in 2007 and there won't be more
-[3proxy-win32]               # archversion can't decode site (fails with: 'utf-8' codec can't decode)
-[3proxy]                     # archversion can't decode site (fails with: 'utf-8' codec can't decode)
 [admid-pack]                 # one shot release with no version information
 [admsnmp]                    # one shot release with no version information
 [asp-audit]                  # the original source is no longer available
