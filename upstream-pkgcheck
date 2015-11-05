@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+al_repo_list=(core extra community multilib)
+as_repo_list=(archstrike archstrike-testing)
+arch=x86_64
+
+# Store information about the script and change to the script directory
+script_name="${0//*\/}"
+script_dir="${0%$script_name}"
+if [[ -z "$script_dir" ]]; then
+    script_dir="$PWD"
+else
+    pushd "$script_dir" >/dev/null
+    script_dir="$PWD"
+    popd >/dev/null
+fi
+cd "$script_dir" || exit
+
+# Read the config
+PKGUPDATES_CONFIG=${PKGUPDATES_CONFIG:="$script_dir/pkgupdates.conf"}
+source "$PKGUPDATES_CONFIG"
+
+# Update or create the repodir
+if [[ -d "$REPODIR" ]]; then
+    # Setup/update repo
+    cd "$REPODIR" || exit
+    # Reset and update the repo
+    git reset --hard >/dev/null 2>&1
+    git pull >/dev/null 2>&1
+else
+    # Clone the repo and checkout updates
+    git clone "$GITREPO_URL" "$REPODIR" >/dev/null 2>&1
+fi
+
+# create a temporarily list of all the archlinux packages
+for repo in "${al_repo_list[@]}"; do
+    mirror="http://mirror.rackspace.com/archlinux/$repo/os/$arch"
+    repo_db="$mirror/$repo.db"
+
+    pkglist=$(while read -r; do
+        pkg="${REPLY/\/*}"
+        pkg="${pkg%-*}"
+        pkg="${pkg%-*}"
+        printf '%s\n' "$pkg"
+    done < <(curl -s -0 "$repo_db" | tar zt) | sort -u)
+done
+
+pushd "$REPODIR" >/dev/null
+
+for repo in "${as_repo_list[@]}"; do
+    for pkg in ./"$repo"/*; do
+        pkgname="${pkg/*\/}"
+        egrep -q '^'"$pkgname"'$' <<< "$pkglist" \
+            && printf '%s\n' "$repo/$pkgname"
+    done
+done
+
+popd >/dev/null

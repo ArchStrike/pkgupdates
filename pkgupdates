@@ -308,15 +308,14 @@ function init_gitrepo {
         touch "$git_lock_file"
         if [[ -d "$REPODIR" ]]; then
             # Setup/update repo
-            cd "$REPODIR"
+            cd "$REPODIR" || exit
             # Reset and update the repo
             git reset --hard >/dev/null 2>&1
             git pull >/dev/null 2>&1
         else
             # Clone the repo and checkout updates
             git clone "$GITREPO_URL" "$REPODIR" >/dev/null 2>&1
-            cd "$REPODIR"
-            git checkout updates >/dev/null 2>&1
+            cd "$REPODIR" || exit
         fi
         rm -f "$git_lock_file"
         git_lock=0
