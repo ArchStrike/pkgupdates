@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source pkgupdates.conf
+
+unset pkglist
+for pkg in "$REPODIR"/archstrike/*; do
+    [[ -n "$pkglist" ]] && pkglist="$pkglist|"
+    pkglist="$pkglist${pkg/*\/}"
+done
+
+./pkgupdates -cd "+^($pkglist)$"
