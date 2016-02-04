@@ -1,12 +1,9 @@
 [0trace]                     # one shot release in 2007 and there won't be more
-[admid-pack]                 # one shot release with no version information
-[admsnmp]                    # one shot release with no version information
 [asp-audit]                  # the original source is no longer available
 [bkhive]                     # this package downloads but no link appears to be on sf.net
 [blackhash]                  # website no longer available
 [blueranger]                 # original source webpage no longer found
 [bluesnarfer]                # no version information on website (refers to dl as 'original src')
-[bob-the-butcher]            # website no longer available
 [brutus]                     # archversion can't decode site (fails with: 'utf-8' codec can't decode)
 [bss]                        # archversion can't decode site (fails with: 'utf-8' codec can't decode)
 [bully]                      # the original project source is no longer available
