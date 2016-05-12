@@ -1,18 +1,13 @@
-#!/bin/bash
-pacman -Qqm | while read package
-do
-  pacman -Ql $package | grep -v -E "(.gz|.html|.h|.hxx|/)$" | awk '{ print $2}' | while read curFile
-  do
-    ldd $curFile &> /dev/null
-    if [ $? = 0 ]
-    then
-      ldd $curFile 2> /dev/null | awk '{ print $3}' | while read libFile
-      do
-        if [ ! -f $libFile ]
-        then
-          echo $package
+#!/usr/bin/env bash
+
+while read -r package; do
+    while read -r curFile; do
+        ldd "$curFile" &> /dev/null
+
+        if (( ! $? )); then
+            while read -r libFile; do
+                printf '%s: %s - %s\n' "$package" "$curFile" "$(awk '{print $1}' <<< "$libFile")"
+            done < <(ldd "$curFile" 2>/dev/null | grep 'not found')
         fi
-      done
-    fi
-  done
-done
+    done < <(pacman -Ql "$package" | egrep -v '(.gz|.html|.h|.hxx|/)$' | awk '{print $2}')
+done < <(pacman -Qqm)
