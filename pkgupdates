@@ -239,13 +239,12 @@ function vercomp_display {
     local pacname="$c_b[$c_w$1$c_b]$c_c"
     local upver_display="${c_y}up: $2$c_c"
     local pkgver_display="$3"
-    [[ -n "$4" ]] \
-        && pkgver_display="$pkgver_display $divider $4"
+
+    [[ -n "$4" ]] && pkgver_display="$pkgver_display $divider $4"
 
     # Find the most recent git author for the package if $git_author_show is set
-    if [ -n "$git_author_show" ] || [ -n "$git_date_show" ]; then
-        author="$(git_info "$1")"
-    fi
+    [[ -n "$git_author_show" || -n "$git_date_show" ]] \
+        && author="$(git_info "$1")"
 
     # Display formatted version comparison
     printf '%s\n' "$pacname $upver_display $divider $pkgver_display$author"
@@ -428,14 +427,14 @@ function develversion_function {
                         ;;
                     1)
                         printf '%s\n' "$REPLY"
-                        [[ "$REPLY" =~ ^[^\{\}]*\} ]] \
-                            && break
+                        [[ "$REPLY" =~ ^[^\{\}]*\} ]] && break
                         ;;
                 esac
             done < PKGBUILD)"
 
             # remove all its functions except pkgver()
             printing=1
+
             pkgbuild="$(while read -r; do
                 case "$printing" in
                     1)
@@ -452,6 +451,7 @@ function develversion_function {
                         ;;
                 esac
             done < PKGBUILD)"
+
             printf '%s\n' "$pkgbuild" > PKGBUILD
             printf '%s\n' "$pkgver_funct" >> PKGBUILD
             unset pkgver_funct printing pkgbuild
@@ -484,6 +484,7 @@ function develversion_function {
             printf '%s\n' 'unset md5sums sha1sums sha256sums sha384sums sha512sums' >> PKGBUILD
             src_array='source=('
             sha_array='sha512sums=('
+
             printf '\n' >> PKGBUILD
             for src in "${source[@]}"; do
                 [[ "${src/*::}" =~ ^\ *(bzr|csv|git|hg|darcs|svn)[^a-zA-Z0-9] ]] && {
@@ -491,13 +492,14 @@ function develversion_function {
                     sha_array="$sha_array 'SKIP'"
                 }
             done
+
             printf '%s\n' "${src_array/\( /\(})" >> PKGBUILD
             printf '%s\n' "${sha_array/\( /\(})" >> PKGBUILD
 
             # Remove src if necessary then update the PKGBUILD using makepkg
-            [[ -d 'src' ]] \
-                && rm -rf src
+            [[ -d 'src' ]] && rm -rf src
             makepkg -oAd >/dev/null 2>&1
+
             (( $? )) && {
                 for dir in *; do
                     [[ -d "$dir" ]] && rm -rf "$dir"
@@ -512,10 +514,12 @@ function develversion_function {
 
             # Parse the updated PKGBUILD to find the upstream package version
             unset epoch pkgver pkgrel
+
             while read -r; do
                 [[ "$REPLY" =~ ^\ *(epoch|pkgver|pkgrel|_[[:alnum:]_]*)\ *= ]] \
                     && eval "$REPLY"
             done < 'PKGBUILD'
+
             [[ -n "$epoch" ]] && epoch="${epoch}:"
             upver="$epoch${pkgver}-$pkgrel"
             unset epoch pkgver pkgrel
@@ -528,15 +532,17 @@ function develversion_function {
                         && printf '%s' "$package"
                 done
             )"
+
             [[ -z "$pacdb_info" ]] && {
                 printf '%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'Unable to locate in the package database' >&2
                 continue
             }
+
             # Parse the pacman db info for its version and use it if newer than the repo package, then compare against upstream
-            [[ "$pacdb_info" =~ -[^-]*-[^-]*$ ]] \
-                && pacdb_pacver="${BASH_REMATCH[0]/-}"
+            [[ "$pacdb_info" =~ -[^-]*-[^-]*$ ]] && pacdb_pacver="${BASH_REMATCH[0]/-}"
+
             # Compare the upstream version again the pacman version, or both the db and git pacman versions if they differ
-            if [ "$pacdb_pacver" = "$pacver" ]; then
+            if [[ "$pacdb_pacver" = "$pacver" ]]; then
                 vercmp_handle "$pkg" "$upver" "$pacver"
             else
                 vercmp_handle "$pkg" "$upver" "$pacdb_pacver" "$pacver"
@@ -569,10 +575,12 @@ function archversion_function {
     for pkg in "${archversion_pkglist[@]}"; do
         # Skip packages in the ignore_pkglist
         ignore=0
+
         for ignorepkg in "${ignore_pkglist[@]}"; do
             [[ "$pkg" =~ ^$ignorepkg$ ]] \
                 && ignore=1
         done
+
         (( ignore == 0 && ${#include_pkglist[@]} > 0 )) && {
             tmpignore=1
             for includepkg in "${include_pkglist[@]}"; do
@@ -582,15 +590,15 @@ function archversion_function {
             (( tmpignore == 1 )) && ignore=1
             unset tmpignore
         }
-        (( ignore == 1 )) \
-            && continue
+
+        (( ignore == 1 )) && continue
 
         # Write (or write over) the config file with a template for everything above packages
         printf '' > "$archversion_tmpconf"
+
         while read -r; do
             printf '%s\n' "$REPLY" >> "$archversion_tmpconf"
-            [[ "$REPLY" =~ ^\ *$ ]] \
-                && break
+            [[ "$REPLY" =~ ^\ *$ ]] && break
         done < "$ARCHVERSION_CONF"
 
         # Define $pkgdef as an empty archversion.conf template then add the $pkg entry from $ARCHVERSION_CONF
@@ -668,14 +676,17 @@ function archversion_function {
 function check_function {
     # Create lists of packages contained in the archversion, develversion and noversion configs
     declare -a archversion_packages=() develversion_packages=() noversion_packages=()
+
     while read -r; do
         [[ "$REPLY" =~ ^\ *\[[^\]]*\]\ * && ! "$REPLY" =~ ^\ *\[DEFAULT\]\ *$ && "${REPLY//[\[\]]}" =~ ^\ *[^\ ]* ]] \
             && archversion_packages=( "${archversion_packages[@]}" "${BASH_REMATCH[0]}" )
     done < "$ARCHVERSION_CONF"
+
     while read -r; do
         [[ ! "$REPLY" =~ ^\ *\# ]] \
             && develversion_packages=( "${develversion_packages[@]}" "$REPLY" )
     done < "$DEVELVERSION_CONF"
+
     while read -r; do
         [[ "$REPLY" =~ ^\ *\[[^\]]*\]\ * && "${BASH_REMATCH[0]//[\[\]]}" =~ ^\ *[^\ ]* ]] \
             && noversion_packages=( "${noversion_packages[@]}" "${BASH_REMATCH[0]}" )
@@ -685,6 +696,7 @@ function check_function {
     [[ -n "$checkexist" ]] && {
         # Find each "invalid" package: update checks configured for non-repo packages
         declare -a nonexistent_pkgs=()
+
         for pkg in "${archversion_packages[@]}"; do
             # Determine the repo directory the package is located in
             unset repo_dir
@@ -698,9 +710,11 @@ function check_function {
             [[ -d "$REPODIR/$repo_dir/$pkg" ]] \
                 || nonexistent_pkgs=( "${nonexistent_pkgs[@]}" "$c_b${ARCHVERSION_CONF/*\/}$c_c $c_y$pkg$c_c" )
         done
+
         for pkg in "${develversion_packages[@]}"; do
             # Determine the repo directory the package is located in
             unset repo_dir
+
             for dir in "${git_repodirs[@]}"; do
                 if [[ -d "$REPODIR/$dir/$pkg" ]]; then
                     repo_dir="$dir"
@@ -711,9 +725,11 @@ function check_function {
             [[ -d "$REPODIR/$repo_dir/$pkg" ]] \
                 || nonexistent_pkgs=( "${nonexistent_pkgs[@]}" "$c_b${DEVELVERSION_CONF/*\/}$c_c $c_y$pkg$c_c" )
         done
+
         for pkg in "${noversion_packages[@]}"; do
             # Determine the repo directory the package is located in
             unset repo_dir
+
             for dir in "${git_repodirs[@]}"; do
                 if [[ -d "$REPODIR/$dir/$pkg" ]]; then
                     repo_dir="$dir"
@@ -727,9 +743,11 @@ function check_function {
 
         # Display the number of nonexistent packages followed by a list of them
         printf '\n%s' "$c_b[${c_w}nonexistent-packages$c_b]${c_c}:"
+
         if [[ -n "${nonexistent_pkgs[*]}" ]]; then
             # display how many packages don't exist
             printf '%s\n\n' "$c_r${#nonexistent_pkgs[@]}$c_c"
+
             # display the list of packages packages that don't exist
             for pkg in "${nonexistent_pkgs[@]}"; do
                 printf '%s\n' "$pkg"
@@ -739,8 +757,7 @@ function check_function {
         fi
 
         # Add space after this function if also checking for missing packages
-        [[ -z "$checkmissing" ]] \
-            && printf '\n'
+        [[ -z "$checkmissing" ]] && printf '\n'
 
         # Cleanup
         unset nonexistent_pkgs
@@ -750,6 +767,7 @@ function check_function {
     [[ -n "$checkmissing" ]] && {
         # Find each "missing" package in the repo that isn't configured to have its version checked
         declare -a missing_pkgs=()
+
         local all_packages=" ${archversion_packages[*]} ${develversion_packages[*]} ${noversion_packages[*]} "
 
         for repo_dir in "${git_repodirs[@]}"; do
@@ -764,6 +782,7 @@ function check_function {
 
         # Display the number of missing packages folowed by a list of them
         printf '\n%s' "$c_b[${c_w}missing-packages$c_b]${c_c}:"
+
         if [[ -n "${missing_pkgs[*]}" ]]; then
             # Display how many packages are missing
             printf '%s\n\n' "$c_r${#missing_pkgs[@]}$c_c"
@@ -774,6 +793,7 @@ function check_function {
         else
             printf '%s\n' "${c_g}0$c_c"
         fi
+
         printf '\n'
 
         # Cleanup
@@ -786,13 +806,13 @@ function versioncompare_function {
     declare -a arch_list=('i686' 'x86_64' 'armv6h' 'armv7h')
     local pkgname='' pkgver=''
 
-    [[ -f "$versioncomp_tmpdb" ]] \
-        && rm "$versioncomp_tmpdb"
+    [[ -f "$versioncomp_tmpdb" ]] && rm "$versioncomp_tmpdb"
     sqlite3 "$versioncomp_tmpdb" "CREATE TABLE IF NOT EXISTS VERSIONLIST(package TEXT PRIMARY KEY NOT NULL, i686 TEXT, x86_64 TEXT, armv6h TEXT, armv7h TEXT);"
 
     for repo_arch in "${arch_list[@]}"; do
         printf '%s %s' 'Downloading and parsing the repo db for' "$c_b$repo_arch${c_c}..."
         load_repodb "$repo_arch"
+
         for pkg in "${repo_packages[@]}"; do
             pkgname="${pkg%-*}"
             pkgname="${pkgname%-*}"
@@ -805,15 +825,17 @@ function versioncompare_function {
                 sqlite3 "$versioncomp_tmpdb" "INSERT INTO VERSIONLIST(package,$repo_arch) VALUES('$pkgname','$pkgver');"
             fi
         done
+
         printf '%s\n' "${c_g}DONE!$c_c"
     done
+
     printf '\n'
 
     for pkg in $(sqlite3 "$versioncomp_tmpdb" "SELECT * FROM VERSIONLIST;"); do
         pkgver=("$(cut -d '|' -f 2 <<< "$pkg")" "$(cut -d '|' -f 3 <<< "$pkg")" "$(cut -d '|' -f 4 <<< "$pkg")" "$(cut -d '|' -f 5 <<< "$pkg")")
 
-        [[ -n "$tmpver" ]] \
-            && unset tmpver
+        [[ -n "$tmpver" ]] && unset tmpver
+
         for version in "${pkgver[@]}"; do
             if [[ -n "$version" ]]; then
                 if [[ -z "$tmpver" ]]; then
@@ -832,8 +854,7 @@ function versioncompare_function {
 
     # Cleanup
     unset arch_list
-    [[ -f "$versioncomp_tmpdb" ]] \
-        && rm "$versioncomp_tmpdb"
+    [[ -f "$versioncomp_tmpdb" ]] && rm "$versioncomp_tmpdb"
 }
 
 # HELP: display usage information and available commands
@@ -881,31 +902,36 @@ trap 'ctrlc' SIGINT SIGQUIT
 
 # Test for programs required by this script before running
 declare -a missing_dependencies=()
+
 for dep in "${dependencies[@]}"; do
     type -P "$dep" >/dev/null \
         || missing_dependencies=( ${missing_dependencies[@]} "$dep" )
 done
+
 [[ -n "${missing_dependencies[*]}" ]] && {
     error "${c_w}missing dependencies ($(
         for (( x=0; x < ${#missing_dependencies[@]}; x++ )); do
             printf '%s' "$c_m${missing_dependencies[$x]}$c_c"
+
             (( (( x + 1 )) < ${#missing_dependencies[@]} )) \
                 && printf '%s' ', '
         done
+
         unset x
     )$c_w)$c_c" 1
 }
 
 # Parse command-line arguments
 declare -a ignore_pkglist=() include_pkglist=()
+
 for param in "$@"; do
     if [[ "$param" =~ ^-[a-zA-Z][a-zA-Z]* ]]; then
         for (( y=0; y<${#param}; y++ )); do
             char="${param:$y:1}"
-            [[ ! "$char" =~ - ]] \
-                && paramparse "$char"
+            [[ ! "$char" =~ - ]] && paramparse "$char"
             unset char
         done
+
         unset y
     elif (( archversion == 1 || develversion == 1 )) && [[ "$param" =~ ^\+(.*) ]]; then
         include_pkglist=( "${include_pkglist[@]}" "${BASH_REMATCH[1]}" )
