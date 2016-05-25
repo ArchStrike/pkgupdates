@@ -18,6 +18,7 @@ done < <(set -o posix ; set)
 # Store information about the script and change to the script directory
 script_name="${0//*\/}"
 script_dir="${0%$script_name}"
+
 if [[ -z "$script_dir" ]]; then
     script_dir="$PWD"
 else
@@ -25,6 +26,7 @@ else
     script_dir="$PWD"
     popd >/dev/null
 fi
+
 cd "$script_dir" || exit
 
 # The config file to load/create
@@ -112,17 +114,17 @@ dependencies=('archversion' 'curl' 'git' 'makepkg' 'sqlite3' 'tar' 'vercmp')
 
 # HELPER FUNCTION: Clean up lock files and exit with an error
 function cleanup_and_exit {
-    [[ "$archversion_lock" = '1' ]] \
-        && rm -f "$archversion_lock_file"
+    # Remove archversion lock file
+    [[ "$archversion_lock" = '1' ]] && rm -f "$archversion_lock_file"
 
-    [[ "$develversion_lock" = '1' ]] \
-        && rm -f "$develversion_lock_file"
+    # Remove develversion lock file
+    [[ "$develversion_lock" = '1' ]] && rm -f "$develversion_lock_file"
 
-    [[ "$versioncomp_lock" = '1' ]] \
-        && rm -f "$versioncomp_lock_file"
+    # Remove version comp lock file
+    [[ "$versioncomp_lock" = '1' ]] && rm -f "$versioncomp_lock_file"
 
-    [[ "$git_lock" = '1' ]] \
-        && rm -f "$git_lock_file"
+    # Remove git lock file
+    [[ "$git_lock" = '1' ]] && rm -f "$git_lock_file"
 
     exit 1
 }
@@ -141,6 +143,7 @@ function warn {
 # HELPER FUNCTION: Display an error and optionally cleanup/quit
 function error {
     printf '%s %s\n' "${c_r}ERROR:$c_c" "$1" >&2
+
     case "$2" in
         1) cleanup_and_exit ;;
         2) printf '\n'; help_function 1 ;;
@@ -281,22 +284,18 @@ function vercmp_handle {
     # Test the second version passed to the function if it exists
     [[ -n "${pkgver[1]}" ]] && {
         vercmp_check cmpresult cmpcolour "$upver" "${pkgver[1]}"
-        (( cmpresult > vercmp )) \
-            && vercmp="$cmpresult"
+        (( cmpresult > vercmp )) && vercmp="$cmpresult"
         pkgver[0]="${pkgver[0]/pacman/live}"
         pkgver[1]="${cmpcolour}git: ${pkgver[1]}$c_c"
     }
 
     if (( vercmp > 0 )); then
         vercomp_display "$package" "$upver" "${pkgver[0]}" "${pkgver[1]}"
-        [[ -n "$updateversion" ]] \
-            && "$UPDATESCRIPT" "$package" "$upver"
+        [[ -n "$updateversion" ]] && "$UPDATESCRIPT" "$package" "$upver"
     elif (( vercmp < 0 )); then
-        [[ -z "$newonly" ]] \
-            && vercomp_display "$package" "$upver" "${pkgver[0]}" "${pkgver[1]}"
+        [[ -z "$newonly" ]] && vercomp_display "$package" "$upver" "${pkgver[0]}" "${pkgver[1]}"
     else
-        [[ -z "$newonly" ]] \
-            && vercomp_display "$package" "$upver" "${pkgver[0]}" "${pkgver[1]}"
+        [[ -z "$newonly" ]] && vercomp_display "$package" "$upver" "${pkgver[0]}" "${pkgver[1]}"
     fi
 }
 
@@ -305,9 +304,11 @@ function init_gitrepo {
     [[ ! -f "$git_lock_file" ]] && {
         git_lock=1
         touch "$git_lock_file"
+
         if [[ -d "$REPODIR" ]]; then
             # Setup/update repo
             cd "$REPODIR" || exit
+
             # Reset and update the repo
             git reset --hard >/dev/null 2>&1
             git pull >/dev/null 2>&1
@@ -316,6 +317,7 @@ function init_gitrepo {
             git clone "$GITREPO_URL" "$REPODIR" >/dev/null 2>&1
             cd "$REPODIR" || exit
         fi
+
         rm -f "$git_lock_file"
         git_lock=0
     }
@@ -341,7 +343,9 @@ function load_repodb {
             printf '\n'
             error "The downloaded package db for $1 contains invalid data" 1
         }
+
         tmp_pkg="${REPLY/\/*}"
+
         if [[ ! "${repo_packages[*]}" =~ $tmp_pkg ]]; then
             repo_packages=( "${repo_packages[@]}" "$tmp_pkg" )
         fi
@@ -354,8 +358,7 @@ function develversion_function {
     declare -a repo_packages=()
 
     # Fail if the development version config file is missing
-    [[ ! -f "$DEVELVERSION_CONF" ]] \
-        && error "$DEVELVERSION_CONF is missing" 1
+    [[ ! -f "$DEVELVERSION_CONF" ]] && error "$DEVELVERSION_CONF is missing" 1
 
     # Declare $repo_packages then initialize it with the load_repodb function
     load_repodb "$PKGUPDATES_ARCH"
@@ -372,25 +375,29 @@ function develversion_function {
     for pkg in "${develversion_pkglist[@]}"; do
         # Skip packages in the ignore_pkglist
         ignore=0
+
         for ignorepkg in "${ignore_pkglist[@]}"; do
-            [[ "$pkg" =~ ^$ignorepkg$ ]] \
-                && ignore=1
+            [[ "$pkg" =~ ^$ignorepkg$ ]] && ignore=1
         done
+
         (( ignore == 0 && ${#include_pkglist[@]} > 0 )) && {
             tmpignore=1
+
             for includepkg in "${include_pkglist[@]}"; do
                 [[ "$pkg" =~ ^$includepkg$ ]] \
                     && tmpignore=0
             done
+
             (( tmpignore == 1 )) && ignore=1
             unset tmpignore
         }
-        (( ignore == 1 )) \
-            && continue
+
+        (( ignore == 1 )) && continue
 
         [[ ! "$pkg" =~ ^\ *# ]] && {
             # Determine the repo directory the package is located in
             unset repo_dir
+
             for dir in "${git_repodirs[@]}"; do
                 if [[ -d "$REPODIR/$dir/$pkg" ]]; then
                     repo_dir="$dir"
@@ -417,6 +424,7 @@ function develversion_function {
             # Reset the PKGBUILD and save the pkgver() function
             git checkout PKGBUILD
             printing=0
+
             pkgver_funct="$(while read -r; do
                 case "$printing" in
                     0)
@@ -484,8 +492,8 @@ function develversion_function {
             printf '%s\n' 'unset md5sums sha1sums sha256sums sha384sums sha512sums' >> PKGBUILD
             src_array='source=('
             sha_array='sha512sums=('
-
             printf '\n' >> PKGBUILD
+
             for src in "${source[@]}"; do
                 [[ "${src/*::}" =~ ^\ *(bzr|csv|git|hg|darcs|svn)[^a-zA-Z0-9] ]] && {
                     src_array="$src_array '$src'"
@@ -504,7 +512,9 @@ function develversion_function {
                 for dir in *; do
                     [[ -d "$dir" ]] && rm -rf "$dir"
                 done
+
                 updatelog="$(makepkg -oAd -A 2>&1)"
+
                 (( $? )) && {
                     popd >/dev/null
                     printf '\n%s %s %s\n%s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'Could not update sources' "${c_m}Log:$c_w" "$updatelog$c_c" >&2
@@ -583,10 +593,12 @@ function archversion_function {
 
         (( ignore == 0 && ${#include_pkglist[@]} > 0 )) && {
             tmpignore=1
+
             for includepkg in "${include_pkglist[@]}"; do
                 [[ "$pkg" =~ ^$includepkg$ ]] \
                     && tmpignore=0
             done
+
             (( tmpignore == 1 )) && ignore=1
             unset tmpignore
         }
@@ -604,6 +616,7 @@ function archversion_function {
         # Define $pkgdef as an empty archversion.conf template then add the $pkg entry from $ARCHVERSION_CONF
         if [[ "$(<"$ARCHVERSION_CONF")" =~ \[\ *$pkg\ *\] ]]; then
             printing=0
+
             pkgdef="$(
                 while read -r; do
                     [[ "$REPLY" =~ ^\ *\[$pkg\]\ *$ ]] \
@@ -628,6 +641,7 @@ function archversion_function {
             printf '\n'
         else
             av_output="$(CONFIG_PACKAGES="$archversion_tmpconf" CACHE_PACKAGES="$archversion_cache" archversion check 2>&1)"
+
             if [[ "$av_output" =~ ^\ *\[ ]]; then
                 upver="${av_output/*up: }"
                 upver="${upver/ *}"
@@ -635,6 +649,7 @@ function archversion_function {
 
                 # Determine the repo directory the package is located in
                 unset repo_dir
+
                 for dir in "${git_repodirs[@]}"; do
                     if [[ -d "$REPODIR/$dir/$pkg" ]]; then
                         repo_dir="$dir"
@@ -659,12 +674,10 @@ function archversion_function {
                 fi
 
                 # Add a blank line after each package when running debug for easier parsing
-                [[ -n "$debugversion" ]] \
-                    && printf '\n'
+                [[ -n "$debugversion" ]] && printf '\n'
 
                 # Remove the tmp config
-                [[ -f "$archversion_tmpconf" ]] \
-                    && rm "$archversion_tmpconf"
+                [[ -f "$archversion_tmpconf" ]] && rm "$archversion_tmpconf"
             else
                 printf '%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" "$(head -n 1 <<< "${av_output/ERROR: }")" >&2
             fi
@@ -700,6 +713,7 @@ function check_function {
         for pkg in "${archversion_packages[@]}"; do
             # Determine the repo directory the package is located in
             unset repo_dir
+
             for dir in "${git_repodirs[@]}"; do
                 if [[ -d "$REPODIR/$dir/$pkg" ]]; then
                     repo_dir="$dir"
@@ -786,6 +800,7 @@ function check_function {
         if [[ -n "${missing_pkgs[*]}" ]]; then
             # Display how many packages are missing
             printf '%s\n\n' "$c_r${#missing_pkgs[@]}$c_c"
+
             # Display the list of missing packages
             for pkg in "${missing_pkgs[@]}"; do
                 printf '%s\n' "$pkg"
@@ -833,7 +848,6 @@ function versioncompare_function {
 
     for pkg in $(sqlite3 "$versioncomp_tmpdb" "SELECT * FROM VERSIONLIST;"); do
         pkgver=("$(cut -d '|' -f 2 <<< "$pkg")" "$(cut -d '|' -f 3 <<< "$pkg")" "$(cut -d '|' -f 4 <<< "$pkg")" "$(cut -d '|' -f 5 <<< "$pkg")")
-
         [[ -n "$tmpver" ]] && unset tmpver
 
         for version in "${pkgver[@]}"; do
@@ -912,9 +926,7 @@ done
     error "${c_w}missing dependencies ($(
         for (( x=0; x < ${#missing_dependencies[@]}; x++ )); do
             printf '%s' "$c_m${missing_dependencies[$x]}$c_c"
-
-            (( (( x + 1 )) < ${#missing_dependencies[@]} )) \
-                && printf '%s' ', '
+            (( (( x + 1 )) < ${#missing_dependencies[@]} )) && printf '%s' ', '
         done
 
         unset x
@@ -996,8 +1008,7 @@ done
 }
 
 # Check (Missing|Existing)
-[[ -n "$checkmissing" || -n "$checkexist" ]] \
-    && check_function
+[[ -n "$checkmissing" || -n "$checkexist" ]] && check_function
 
 # Version Compare
 [[ -n "$versioncomp" ]] && {
@@ -1013,4 +1024,3 @@ done
 }
 
 exit 0
-
