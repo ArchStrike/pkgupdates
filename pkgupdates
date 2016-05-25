@@ -77,17 +77,20 @@ PKGUPDATES_TMPDIR=${PKGUPDATES_TMPDIR:='/tmp/pkgupdates'}
 archversion_cache="$PKGUPDATES_TMPDIR/archversion.cache"
 archversion_tmpconf="$PKGUPDATES_TMPDIR/upversion.tmp.conf"
 versioncomp_tmpdb="$PKGUPDATES_TMPDIR/versioncomp.db"
+packagercheck_tmpdir="$PKGUPDATES_TMPDIR/packagercheck"
 
 # Lock files
 archversion_lock_file="$PKGUPDATES_TMPDIR/archversion.lock"
 develversion_lock_file="$PKGUPDATES_TMPDIR/develversion.lock"
 versioncomp_lock_file="$PKGUPDATES_TMPDIR/versioncomp.lock"
+packagercheck_lock_file="$PKGUPDATES_TMPDIR/packagercheck.lock"
 git_lock_file="$PKGUPDATES_TMPDIR/git.lock"
 
 # Lock states
 archversion_lock=0
 develversion_lock=0
 versioncomp_lock=0
+packagercheck_lock=0
 git_lock=0
 
 # Package repo directories
@@ -120,11 +123,20 @@ function cleanup_and_exit {
     # Remove develversion lock file
     [[ "$develversion_lock" = '1' ]] && rm -f "$develversion_lock_file"
 
-    # Remove version comp lock file
+    # Remove versioncomp lock file
     [[ "$versioncomp_lock" = '1' ]] && rm -f "$versioncomp_lock_file"
+
+    # Remove packagercheck lock file
+    [[ "$packagercheck_lock" = '1' ]] && {
+        rm -f "$packagercheck_lock_file"
+        [[ -d "$packagercheck_tmpdir" ]] && rm -rf "${packagercheck_tmpdir:?}"
+    }
 
     # Remove git lock file
     [[ "$git_lock" = '1' ]] && rm -f "$git_lock_file"
+
+    # Remove the pkgupdates temp directory if its empty
+    [[ "$PKGUPDATES_TMPDIR" ]] && rmdir -p "$PKGUPDATES_TMPDIR" >/dev/null 2>&1
 
     exit 1
 }
@@ -176,6 +188,9 @@ function paramparse {
             ;;
         -n|n)
             newonly=1
+            ;;
+        -p|p)
+            packagercheck=1
             ;;
         -u|u)
             updateversion=1
@@ -685,6 +700,44 @@ function archversion_function {
     done
 }
 
+# PACKAGERCHECK: Check packager of each package
+function packagercheck_function {
+    # Remove the temp folder if it exists
+    if [[ -e "$packagercheck_tmpdir" ]]; then
+        warn 'Skipping the packager check because the temp folder already exists'
+    else
+        declare -a arch_list=('i686' 'x86_64' 'armv6h' 'armv7h')
+        local package='' packager=''
+
+        install -d "$packagercheck_tmpdir"
+        pushd "$packagercheck_tmpdir" >/dev/null
+
+        for arch in "${arch_list[@]}"; do
+            for repo in "${git_repodirs[@]}"; do
+                [[ -f repo.db ]] && rm repo.db
+                curl -s -0 "$PKGREPO_DOMAIN/repo/$arch/$repo/$repo.db" > repo.db
+                [[ -d repo-dir ]] && rm -rf repo-dir
+                install -d repo-dir
+                pushd repo-dir >/dev/null
+                tar zxf ../repo.db
+
+                for pkg in ./*; do
+                    [[ -f "$pkg/desc" ]] && {
+                        package=$(grep -A 1 '%NAME%' "$pkg/desc" | tail -n 1)
+                        packager=$(grep -A 1 '%PACKAGER%' "$pkg/desc" | tail -n 1)
+                        printf '%s %s: %s\n' "$c_y($arch)" "$c_w$package" "$c_b$packager$c_c"
+                    }
+                done
+
+                popd >/dev/null
+            done
+        done
+
+        popd >/dev/null
+        [[ -e "$packagercheck_tmpdir" ]] && rm -rf "${packagercheck_tmpdir:?}"
+    fi
+}
+
 # CHECKMISSING: Undefined package check
 function check_function {
     # Create lists of packages contained in the archversion, develversion and noversion configs
@@ -884,6 +937,7 @@ function help_function {
     printf '  %-45s %s\n' "$c_d⤷$c_c $c_w-u$c_d|${c_w}u$c_c" "pass the pkgname of packages with new versions available to the ${c_m}update script"
     printf '  %-45s %s\n\n' "$c_d⤷$c_c $c_w-b$c_d|${c_w}b$c_c" "display ${c_m}debugging$c_c information in output (only affects $c_w-c$c_d|${c_w}c$c_c)"
     printf '%s\n' "${c_b}REVIEW OPTIONS$c_c"
+    printf '  %-32s %s\n' "$c_w-p$c_d|${c_w}p$c_c" "check the ${c_m}packager$c_c who built each package"
     printf '  %-32s %s\n' "$c_w-e$c_d|${c_w}e$c_c" "check for packages that have been configured but ${c_m}do not exist$c_c in git"
     printf '  %-32s %s\n' "$c_w-m$c_d|${c_w}m$c_c" "check for packages in git that are ${c_m}missing$c_c from the configs"
     printf '  %-32s %s\n\n' "$c_w-v$c_d|${c_w}v$c_c" "check for packages with ${c_m}different versions$c_c on each arch"
@@ -1007,6 +1061,19 @@ done
     fi
 }
 
+# Packager Check
+[[ -n "$packagercheck" ]] && {
+    if [[ -e "$packagercheck_lock_file" ]]; then
+        warn 'Skipping the packager check as it is already running'
+    else
+        packagercheck_lock=1
+        touch "$packagercheck_lock_file"
+        packagercheck_function
+        rm -f "$packagercheck_lock_file"
+        packagercheck_lock=0
+    fi
+}
+
 # Check (Missing|Existing)
 [[ -n "$checkmissing" || -n "$checkexist" ]] && check_function
 
@@ -1022,5 +1089,8 @@ done
         versioncomp_lock=0
     fi
 }
+
+# Remove the pkgupdates temp directory if its empty
+[[ "$PKGUPDATES_TMPDIR" ]] && rmdir -p "$PKGUPDATES_TMPDIR" >/dev/null 2>&1
 
 exit 0
