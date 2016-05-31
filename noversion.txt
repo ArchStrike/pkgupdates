@@ -1,19 +1,15 @@
 [0trace]                     # one shot release in 2007 and there won't be more
 [asp-audit]                  # the original source is no longer available
 [bkhive]                     # this package downloads but no link appears to be on sf.net
-[blackhash]                  # website no longer available
 [blueranger]                 # original source webpage no longer found
 [bluesnarfer]                # no version information on website (refers to dl as 'original src')
-[brutus]                     # archversion can't decode site (fails with: 'utf-8' codec can't decode)
 [bss]                        # archversion can't decode site (fails with: 'utf-8' codec can't decode)
 [bully]                      # the original project source is no longer available
 [burpsuite]                  # trial has no version info listed
 [casefile]                   # website uses ajax to generate download
 [cisco-router-config]        # no online assets
 [cisco-torch]                # no download link
-[darkmysqli]                 # One shot release in 2010 and there won't be more
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
-[mausezahn]                  # per site the pkg is version locked and its replacement is netsniff-ng
 [ohrwurm]		             # src is dead, was last updated 2010
 [pdfminer]                   # specific version required by w3af
 [proxyp]                     # has not been updated since 2013-12-06
