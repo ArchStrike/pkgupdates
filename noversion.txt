@@ -21,3 +21,6 @@
 [wmat]			             # src website is dead
 [webrute]                    # src doesnt exist out of repo
 [archstrike-meta]            # meta pkg
+[slowloris]                  # src only on our repo
+[slowloris6]                 # src only on our repo
+[mitmap]                     # src only on our repo
