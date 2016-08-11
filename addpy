@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 [[ -z "${1}" ]] && {
 printf '%s\n' "Error: Type the name of the py package you want to add." >&2
+printf '%s\n' "Example: ./addpy instagram (adds python-instagram)" >&2
 exit 1
 }
 
