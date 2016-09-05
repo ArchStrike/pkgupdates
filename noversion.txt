@@ -11,6 +11,7 @@
 [casefile]                   # website uses ajax to generate download
 [cisco-router-config]        # no online assets
 [cisco-torch]                # no download link
+[dff-scanner]                # no version information on website
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
 [ohrwurm]		             # src is dead, was last updated 2010
 [pdfminer]                   # specific version required by w3af
