@@ -1,5 +1,6 @@
 [0trace]                     # one shot release in 2007 and there won't be more
 [asp-audit]                  # the original source is no longer available
+[archstrike-keyring]         # there is no version information
 [bkhive]                     # this package downloads but no link appears to be on sf.net
 [blueranger]                 # original source webpage no longer found
 [bluesnarfer]                # no version information on website (refers to dl as 'original src')
