@@ -328,7 +328,9 @@ function init_gitrepo {
             # Reset and update the repo
             git reset --hard >/dev/null 2>&1
             git pull >/dev/null 2>&1
-            git clean -dfq >/dev/null 2>&1
+            rm .gitignore
+            git clean -dffq >/dev/null 2>&1
+            git checkout .gitignore
         else
             # Clone the repo and checkout updates
             git clone "$GITREPO_URL" "$REPODIR" >/dev/null 2>&1
