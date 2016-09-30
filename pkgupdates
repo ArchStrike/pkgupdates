@@ -362,7 +362,7 @@ function load_repodb {
         tmp_pkg="${REPLY/\/*}"
 
         if [[ ! "${repo_packages[*]}" =~ $tmp_pkg ]]; then
-            repo_packages=( "${repo_packages[@]}" "$tmp_pkg" )
+            repo_packages=("${repo_packages[@]}" "$tmp_pkg")
         fi
     done <<< "$tmp_packages"
 }
@@ -382,7 +382,7 @@ function develversion_function {
     [[ -z "${develversion_pkglist[*]}" ]] && {
         while read -r; do
             [[ "$REPLY" =~ ^\ *[^\ \#][^\#]* ]] \
-                && develversion_pkglist=( "${develversion_pkglist[@]}" "${BASH_REMATCH[0]}" )
+                && develversion_pkglist=("${develversion_pkglist[@]}" "${BASH_REMATCH[0]}")
         done < "$DEVELVERSION_CONF"
     }
 
@@ -592,7 +592,7 @@ function archversion_function {
     [[ -z "${archversion_pkglist[*]}" ]] && {
         while read -r; do
             [[ ! "$REPLY" =~ \[DEFAULT\] && "$REPLY" =~ ^\ *\[[^][]*\]\ *$ ]] \
-                && archversion_pkglist=( "${archversion_pkglist[@]}" "${REPLY//[\[\]]}" )
+                && archversion_pkglist=("${archversion_pkglist[@]}" "${REPLY//[\[\]]}")
         done < "$ARCHVERSION_CONF"
     }
 
@@ -745,17 +745,17 @@ function check_function {
 
     while read -r; do
         [[ "$REPLY" =~ ^\ *\[[^\]]*\]\ * && ! "$REPLY" =~ ^\ *\[DEFAULT\]\ *$ && "${REPLY//[\[\]]}" =~ ^\ *[^\ ]* ]] \
-            && archversion_packages=( "${archversion_packages[@]}" "${BASH_REMATCH[0]}" )
+            && archversion_packages=("${archversion_packages[@]}" "${BASH_REMATCH[0]}")
     done < "$ARCHVERSION_CONF"
 
     while read -r; do
         [[ ! "$REPLY" =~ ^\ *\# ]] \
-            && develversion_packages=( "${develversion_packages[@]}" "$REPLY" )
+            && develversion_packages=("${develversion_packages[@]}" "$REPLY")
     done < "$DEVELVERSION_CONF"
 
     while read -r; do
         [[ "$REPLY" =~ ^\ *\[[^\]]*\]\ * && "${BASH_REMATCH[0]//[\[\]]}" =~ ^\ *[^\ ]* ]] \
-            && noversion_packages=( "${noversion_packages[@]}" "${BASH_REMATCH[0]}" )
+            && noversion_packages=("${noversion_packages[@]}" "${BASH_REMATCH[0]}")
     done < "$NOVERSION"
 
     # Check for packages with version checks that don't exist upstream
@@ -775,7 +775,7 @@ function check_function {
             done
 
             [[ -d "$REPODIR/$repo_dir/$pkg" ]] \
-                || nonexistent_pkgs=( "${nonexistent_pkgs[@]}" "$c_b${ARCHVERSION_CONF/*\/}$c_c $c_y$pkg$c_c" )
+                || nonexistent_pkgs=("${nonexistent_pkgs[@]}" "$c_b${ARCHVERSION_CONF/*\/}$c_c $c_y$pkg$c_c")
         done
 
         for pkg in "${develversion_packages[@]}"; do
@@ -790,7 +790,7 @@ function check_function {
             done
 
             [[ -d "$REPODIR/$repo_dir/$pkg" ]] \
-                || nonexistent_pkgs=( "${nonexistent_pkgs[@]}" "$c_b${DEVELVERSION_CONF/*\/}$c_c $c_y$pkg$c_c" )
+                || nonexistent_pkgs=("${nonexistent_pkgs[@]}" "$c_b${DEVELVERSION_CONF/*\/}$c_c $c_y$pkg$c_c")
         done
 
         for pkg in "${noversion_packages[@]}"; do
@@ -805,7 +805,7 @@ function check_function {
             done
 
             [[ -d "$REPODIR/$repo_dir/$pkg" ]] \
-                || nonexistent_pkgs=( "${nonexistent_pkgs[@]}" "$c_b${NOVERSION/*\/}$c_c $c_y$pkg$c_c" )
+                || nonexistent_pkgs=("${nonexistent_pkgs[@]}" "$c_b${NOVERSION/*\/}$c_c $c_y$pkg$c_c")
         done
 
         # Display the number of nonexistent packages followed by a list of them
@@ -842,7 +842,7 @@ function check_function {
                 [[ -d "$pkg" ]] && {
                     pkg="${pkg/*\/}"
                     [[ ! "$all_packages" =~ \ $pkg\  ]] \
-                        && missing_pkgs=( "${missing_pkgs[@]}" "$c_y$pkg$c_c" )
+                        && missing_pkgs=("${missing_pkgs[@]}" "$c_y$pkg$c_c")
                 }
             done
         done
@@ -973,7 +973,7 @@ declare -a missing_dependencies=()
 
 for dep in "${dependencies[@]}"; do
     type -P "$dep" >/dev/null \
-        || missing_dependencies=( ${missing_dependencies[@]} "$dep" )
+        || missing_dependencies=(${missing_dependencies[@]} "$dep")
 done
 
 [[ -n "${missing_dependencies[*]}" ]] && {
@@ -1000,9 +1000,9 @@ for param in "$@"; do
 
         unset y
     elif (( archversion == 1 || develversion == 1 )) && [[ "$param" =~ ^\+(.*) ]]; then
-        include_pkglist=( "${include_pkglist[@]}" "${BASH_REMATCH[1]}" )
+        include_pkglist=("${include_pkglist[@]}" "${BASH_REMATCH[1]}")
     elif  (( archversion == 1 || develversion == 1 )) && [[ "$param" =~ ^\^(.*) ]]; then
-        ignore_pkglist=( "${ignore_pkglist[@]}" "${BASH_REMATCH[1]}" )
+        ignore_pkglist=("${ignore_pkglist[@]}" "${BASH_REMATCH[1]}")
     else
         paramparse "$param"
     fi
