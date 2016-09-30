@@ -287,6 +287,7 @@ function vercmp_check {
 
 # HELPER FUNCTION: Compare the upstream version against 1-2 package version(s)
 function vercmp_handle {
+    unset pkgver
     local package="$1"
     local upver="$2"
     local pkgver=("$3" "$4")
