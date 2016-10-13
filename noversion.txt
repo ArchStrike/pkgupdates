@@ -1,4 +1,5 @@
 [0trace]                     # one shot release in 2007 and there won't be more
+[archstrike-meta]            # meta pkg
 [asp-audit]                  # the original source is no longer available
 [archstrike-keyring]         # there is no version information
 [bkhive]                     # this package downloads but no link appears to be on sf.net
@@ -13,19 +14,18 @@
 [cisco-torch]                # no download link
 [dff-scanner]                # no version information on website
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
-[ohrwurm]		             # src is dead, was last updated 2010
+[hack_library]               # development stopped
+[mitmap]                     # src only on our repo
+[ohrwurm]		                 # src is dead, was last updated 2010
 [pdfminer]                   # specific version required by w3af
 [proxyp]                     # has not been updated since 2013-12-06
 [python2-nmap]               # locked at v0.1.4 per authors site
+[shellter]                   # src is put on the same file on each different version
+[slowloris]                  # src only on our repo
+[slowloris6]                 # src only on our repo
 [tcptraceroute]              # Authors website is down project is dead
 [tpcat]                      # Src is a single python file has not been touched since 2009
 [umit]                       # Project is shutdown per pkgurl
-[webscarab]                  # is no longer maintained is replaced by zap proxy
-[wmat]			             # src website is dead
 [webrute]                    # src doesnt exist out of repo
-[archstrike-meta]            # meta pkg
-[slowloris]                  # src only on our repo
-[slowloris6]                 # src only on our repo
-[mitmap]                     # src only on our repo
-[hack_library]               # development stopped
-[shellter]                   # src is put on the same file on each different version
+[webscarab]                  # is no longer maintained is replaced by zap proxy
+[wmat]			                 # src website is dead
