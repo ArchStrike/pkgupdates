@@ -28,3 +28,4 @@
 [slowloris6]                 # src only on our repo
 [mitmap]                     # src only on our repo
 [hack_library]               # development stopped
+[shellter]                   # src is put on the same file on each different version
