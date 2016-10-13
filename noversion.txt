@@ -27,3 +27,4 @@
 [slowloris]                  # src only on our repo
 [slowloris6]                 # src only on our repo
 [mitmap]                     # src only on our repo
+[hack_library]               # development stopped
