@@ -1,4 +1,5 @@
 [0trace]                     # one shot release in 2007 and there won't be more
+[archstrike-mirrorlist]      # mirrorlist
 [archstrike-meta]            # meta pkg
 [asp-audit]                  # the original source is no longer available
 [archstrike-keyring]         # there is no version information
