@@ -16,6 +16,7 @@
 [dff-scanner]                # no version information on website
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
 [hack_library]               # development stopped
+[kismet-earth]               # src only on our repo
 [mitmap]                     # src only on our repo
 [ohrwurm]		                 # src is dead, was last updated 2010
 [pdfminer]                   # specific version required by w3af
@@ -24,6 +25,7 @@
 [shellter]                   # src is put on the same file on each different version
 [slowloris]                  # src only on our repo
 [slowloris6]                 # src only on our repo
+[stegsolve]                  # development has stopped
 [tcptraceroute]              # Authors website is down project is dead
 [tpcat]                      # Src is a single python file has not been touched since 2009
 [umit]                       # Project is shutdown per pkgurl
@@ -31,4 +33,3 @@
 [webscarab]                  # is no longer maintained is replaced by zap proxy
 [wmat]			                 # src website is dead
 [pyminifakedns]              # src on our repo
-[stegsolve]                  # development has stopped
