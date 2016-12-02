@@ -29,3 +29,4 @@
 [webrute]                    # src doesnt exist out of repo
 [webscarab]                  # is no longer maintained is replaced by zap proxy
 [wmat]			                 # src website is dead
+[pyminifakedns]              # src on our repo
