@@ -17,6 +17,7 @@
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
 [hack_library]               # development stopped
 [hamster]                    # development stopped
+[icmpquery]                  # development stopped
 [kismet-earth]               # src only on our repo
 [mitmap]                     # src only on our repo
 [ohrwurm]		                 # src is dead, was last updated 2010
