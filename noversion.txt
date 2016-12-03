@@ -18,6 +18,7 @@
 [hack_library]               # development stopped
 [hamster]                    # development stopped
 [icmpquery]                  # development stopped
+[jigsaw]                     # src only on our repo
 [kismet-earth]               # src only on our repo
 [mitmap]                     # src only on our repo
 [ohrwurm]		                 # src is dead, was last updated 2010
