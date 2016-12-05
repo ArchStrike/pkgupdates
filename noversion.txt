@@ -15,6 +15,7 @@
 [cisco-torch]                # no download link
 [dff-scanner]                # no version information on website
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
+[dnspredict]                 # src only on our repo
 [grabber]                    # development stopped
 [hack_library]               # development stopped
 [hamster]                    # development stopped
