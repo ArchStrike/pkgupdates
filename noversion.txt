@@ -17,6 +17,7 @@
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
 [dnspredict]                 # src only on our repo
 [dumpzilla]                  # development stopped
+[eindeutig]                  # one shot release
 [grabber]                    # development stopped
 [grepforrfi]                 # one shot release
 [hack_library]               # development stopped
