@@ -18,6 +18,7 @@
 [dnspredict]                 # src only on our repo
 [dumpzilla]                  # development stopped
 [grabber]                    # development stopped
+[grepforrfi]                 # one shot release
 [hack_library]               # development stopped
 [hamster]                    # development stopped
 [icmpquery]                  # development stopped
