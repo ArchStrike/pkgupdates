@@ -45,3 +45,4 @@
 [webscarab]                  # is no longer maintained is replaced by zap proxy
 [wmat]			                 # src website is dead
 [pyminifakedns]              # src on our repo
+[python2-xdot]               # 0.6 is the last python2 version, until we need python-xdot this pkg is locked
