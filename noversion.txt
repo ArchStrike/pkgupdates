@@ -49,3 +49,4 @@
 [xspy]                       # development has stopped
 [wsfuzzer]                   # inactive OWASP project
 [voipong]                    # development has stopped
+[vega]                       # no version info at url/source
