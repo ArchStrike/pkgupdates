@@ -254,7 +254,7 @@ function git_info {
 function vercomp_display {
     local author=''
     local divider="$c_b|$c_c"
-    local pacname="$c_b[$c_w$1$c_b]$c_c"
+    local pacname="$c_w$1$c_c"
     local upver_display="${c_y}up: $2$c_c"
     local pkgver_display="$3"
 
@@ -265,7 +265,10 @@ function vercomp_display {
         && author="$(git_info "$1")"
 
     # Display formatted version comparison
-    printf '%s\n' "$pacname $upver_display $divider $pkgver_display$author"
+    # Commented out original line
+    #printf '%s\n' "$pacname $upver_display $divider $pkgver_display$author"
+    # To return to original output uncomment line above and comment line below
+    printf '%-35s   %-30s   %s\n' "$pacname" "$upver_display" "$pkgver_display$author"
 }
 
 # HELPER FUNCTION: Compares two versions and sends result + colour to input vars
