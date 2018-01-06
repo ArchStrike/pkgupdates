@@ -54,3 +54,4 @@
 [tftp-bruteforce]            # no version info
 [tbear]                      # no version info
 [stompy]                     # no version info
+[spiderpig-pdffuzzer]        # no version info
