@@ -52,3 +52,4 @@
 [vega]                       # no version info at url/source
 [uniscan]                    # development has stopped
 [tftp-bruteforce]            # no version info
+[tbear]                      # no version info
