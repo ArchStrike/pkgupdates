@@ -53,3 +53,4 @@
 [uniscan]                    # development has stopped
 [tftp-bruteforce]            # no version info
 [tbear]                      # no version info
+[stompy]                     # no version info
