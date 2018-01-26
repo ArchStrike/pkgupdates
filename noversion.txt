@@ -13,6 +13,7 @@
 [casefile]                   # website uses ajax to generate download
 [cisco-router-config]        # no online assets
 [cisco-torch]                # no download link
+[delldrac]                   # no version information on website
 [dff-scanner]                # no version information on website
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
 [dnspredict]                 # src only on our repo
