@@ -18,6 +18,7 @@
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
 [dmitry]                     # development stopped
 [dnspredict]                 # src only on our repo
+[dpeparser]                  # development stopped
 [dumpzilla]                  # development stopped
 [eindeutig]                  # one shot release
 [grabber]                    # development stopped
