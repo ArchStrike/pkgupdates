@@ -31,6 +31,7 @@
 [g72x]                       # no version information on website
 [galleta]                    # development stopped
 [gggooglescan]               # development stopped
+[ghettotooth]                # no version information on website
 [grabber]                    # development stopped
 [grepforrfi]                 # one shot release
 [hack_library]               # development stopped
