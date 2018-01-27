@@ -28,6 +28,7 @@
 [fuzzball2]                  # development stopped
 [fuzzdiff]                   # development stopped
 [g711conversions]            # development stopped
+[g72x]                       # no version information on website
 [grabber]                    # development stopped
 [grepforrfi]                 # one shot release
 [hack_library]               # development stopped
