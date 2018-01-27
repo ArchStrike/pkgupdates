@@ -23,6 +23,7 @@
 [eindeutig]                  # one shot release
 [ent]                        # no version information on website
 [erase-registrations]        # no version information on website
+[flasm]                      # development stopped
 [grabber]                    # development stopped
 [grepforrfi]                 # one shot release
 [hack_library]               # development stopped
