@@ -30,6 +30,7 @@
 [g711conversions]            # development stopped
 [g72x]                       # no version information on website
 [galleta]                    # development stopped
+[gggooglescan]               # development stopped
 [grabber]                    # development stopped
 [grepforrfi]                 # one shot release
 [hack_library]               # development stopped
