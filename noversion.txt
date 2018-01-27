@@ -24,6 +24,7 @@
 [ent]                        # no version information on website
 [erase-registrations]        # no version information on website
 [flasm]                      # development stopped
+[ftpmap]                     # development stopped
 [grabber]                    # development stopped
 [grepforrfi]                 # one shot release
 [hack_library]               # development stopped
