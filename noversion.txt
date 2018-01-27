@@ -32,6 +32,7 @@
 [galleta]                    # development stopped
 [gggooglescan]               # development stopped
 [ghettotooth]                # no version information on website
+[goodork]                    # development stopped
 [grabber]                    # development stopped
 [grepforrfi]                 # one shot release
 [hack_library]               # development stopped
