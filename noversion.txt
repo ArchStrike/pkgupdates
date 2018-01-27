@@ -27,6 +27,7 @@
 [ftpmap]                     # development stopped
 [fuzzball2]                  # development stopped
 [fuzzdiff]                   # development stopped
+[g711conversions]            # development stopped
 [grabber]                    # development stopped
 [grepforrfi]                 # one shot release
 [hack_library]               # development stopped
