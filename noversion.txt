@@ -33,6 +33,7 @@
 [gggooglescan]               # development stopped
 [ghettotooth]                # no version information on website
 [goodork]                    # development stopped
+[goog-mail]                  # no version information on website
 [gooscan]                    # no version information on website
 [grabber]                    # development stopped
 [grepforrfi]                 # one shot release
