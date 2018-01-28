@@ -53,6 +53,7 @@
 [karma-hostapd]              # development stopped
 [lbd]                        # development stopped
 [libfindrtp]                 # no version information on website
+[libnacl]                    # no version information on website
 [mitmap]                     # src only on our repo
 [ohrwurm]		                 # src is dead, was last updated 2010
 [pasco]                      # one shot release in 2004
