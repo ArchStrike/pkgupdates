@@ -47,6 +47,7 @@
 [icmpquery]                  # development stopped
 [iheartxor]                  # development stopped
 [inviteflood]                # development stopped
+[iphoneanalyzer]             # development stopped
 [jigsaw]                     # src only on our repo
 [kismet-earth]               # src only on our repo
 [mitmap]                     # src only on our repo
