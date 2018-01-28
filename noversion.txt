@@ -42,6 +42,7 @@
 [hash-identifier]            # src last updated 2011
 [hbad]                       # no version information on website
 [http-fuzz]                  # no version information on website
+[httprint]                   # development stopped
 [icmpquery]                  # development stopped
 [jigsaw]                     # src only on our repo
 [kismet-earth]               # src only on our repo
