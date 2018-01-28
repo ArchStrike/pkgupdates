@@ -43,6 +43,7 @@
 [hbad]                       # no version information on website
 [http-fuzz]                  # no version information on website
 [httprint]                   # development stopped
+[iaxflood]                   # no version information on website
 [icmpquery]                  # development stopped
 [jigsaw]                     # src only on our repo
 [kismet-earth]               # src only on our repo
