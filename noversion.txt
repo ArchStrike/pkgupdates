@@ -51,6 +51,7 @@
 [jigsaw]                     # src only on our repo
 [kismet-earth]               # src only on our repo
 [karma-hostapd]              # development stopped
+[lbd]                        # development stopped
 [mitmap]                     # src only on our repo
 [ohrwurm]		                 # src is dead, was last updated 2010
 [pasco]                      # one shot release in 2004
