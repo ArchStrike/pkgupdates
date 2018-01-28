@@ -40,6 +40,7 @@
 [hack_library]               # development stopped
 [hamster]                    # development stopped
 [hash-identifier]            # src last updated 2011
+[hbad]                       # no version information on website
 [icmpquery]                  # development stopped
 [jigsaw]                     # src only on our repo
 [kismet-earth]               # src only on our repo
