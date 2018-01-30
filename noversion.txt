@@ -71,6 +71,7 @@
 [pngcheck]                   # development stopped
 [powerfuzzer]                # development stopped
 [proxyp]                     # has not been updated since 2013-12-06
+[pscan]                      # no version information on website
 [python2-nmap]               # locked at v0.1.4 per authors site
 [ruby1.9]                    # locked at 1.9
 [ruby1.9-bundler]            # locked at 1.9
