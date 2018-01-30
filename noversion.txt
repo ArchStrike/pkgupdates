@@ -61,6 +61,7 @@
 [nbnspoof]                   # development has stopped
 [ncpfs]                      # development has stopped
 [nfsshell]                   # development has stopped
+[nsdtool]                    # no version information on website
 [ohrwurm]		                 # src is dead, was last updated 2010
 [pasco]                      # one shot release in 2004
 [pdfminer]                   # specific version required by w3af
