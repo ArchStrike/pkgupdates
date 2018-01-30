@@ -64,6 +64,7 @@
 [nsdtool]                    # no version information on website
 [ohrwurm]		                 # src is dead, was last updated 2010
 [pasco]                      # one shot release in 2004
+[paketto]                    # development stopped
 [pdfminer]                   # specific version required by w3af
 [proxyp]                     # has not been updated since 2013-12-06
 [python2-nmap]               # locked at v0.1.4 per authors site
