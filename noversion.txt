@@ -59,6 +59,7 @@
 [mitmap]                     # src only on our repo
 [multimac]                   # development has stopped
 [nbnspoof]                   # development has stopped
+[ncpfs]                      # development has stopped
 [ohrwurm]		                 # src is dead, was last updated 2010
 [pasco]                      # one shot release in 2004
 [pdfminer]                   # specific version required by w3af
