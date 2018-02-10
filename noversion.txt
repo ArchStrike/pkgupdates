@@ -78,6 +78,7 @@
 [rdesktop-brute]             # development stopped
 [ropeme]                     # zips from master
 [rtpinsertsound]             # no version information on website
+[rtpmixsound]                # no version information on website
 [rtp-flood]                  # no version information on website
 [ruby1.9]                    # locked at 1.9
 [ruby1.9-bundler]            # locked at 1.9
