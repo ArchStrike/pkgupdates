@@ -86,6 +86,7 @@
 [rtp-flood]                  # no version information on website
 [ruby1.9]                    # locked at 1.9
 [ruby1.9-bundler]            # locked at 1.9
+[ruby-zip]                   # locked at 1.9
 [shellter]                   # src is put on the same file on each different version
 [sakis3g]                    # development stopped
 [scalpel]                    # development stopped
