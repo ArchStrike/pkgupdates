@@ -88,6 +88,7 @@
 [stegsolve]                  # development has stopped
 [sqlbrute]                   # one shot release in 2006
 [tcptraceroute]              # Authors website is down project is dead
+[teardown]                   # development stopped
 [tpcat]                      # Src is a single python file has not been touched since 2009
 [umit]                       # Project is shutdown per pkgurl
 [webrute]                    # src doesnt exist out of repo
