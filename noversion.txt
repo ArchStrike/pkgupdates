@@ -82,6 +82,7 @@
 [shellter]                   # src is put on the same file on each different version
 [sakis3g]                    # development stopped
 [scalpel]                    # development stopped
+[sfuzz]                      # development stopped
 [slowloris]                  # src only on our repo
 [slowloris6]                 # src only on our repo
 [stegsolve]                  # development has stopped
