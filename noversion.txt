@@ -79,6 +79,7 @@
 [recstudio]                  # development stopped
 [redirectpoison]             # no version information on website
 [reglookup]                  # development stopped
+[rfidtool]                   # development stopped
 [ropeme]                     # zips from master
 [rtpinsertsound]             # no version information on website
 [rtpmixsound]                # no version information on website
