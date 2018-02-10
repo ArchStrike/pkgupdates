@@ -91,6 +91,7 @@
 [slowloris]                  # src only on our repo
 [slowloris6]                 # src only on our repo
 [stegsolve]                  # development has stopped
+[subterfuge]                 # development has stopped and no release version on github
 [sqlbrute]                   # one shot release in 2006
 [tcptraceroute]              # Authors website is down project is dead
 [teardown]                   # development stopped
