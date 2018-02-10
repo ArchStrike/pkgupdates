@@ -76,6 +76,7 @@
 [python2-gmpy]               # locked at 1.17
 [python2-nmap]               # locked at v0.1.4 per authors site
 [rdesktop-brute]             # development stopped
+[ropeme]                     # zips from master
 [ruby1.9]                    # locked at 1.9
 [ruby1.9-bundler]            # locked at 1.9
 [shellter]                   # src is put on the same file on each different version
