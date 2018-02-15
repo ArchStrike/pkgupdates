@@ -1,4 +1,5 @@
 [0trace]                     # one shot release in 2007 and there won't be more
+[allthevhosts]               # no version information on website
 [archstrike-mirrorlist]      # mirrorlist
 [archstrike-meta]            # meta pkg
 [asp-audit]                  # the original source is no longer available
@@ -80,6 +81,7 @@
 [redirectpoison]             # no version information on website
 [reglookup]                  # development stopped
 [rfidtool]                   # development stopped
+[rinetd]                     # development stopped
 [ropeme]                     # zips from master
 [rtpinsertsound]             # no version information on website
 [rtpmixsound]                # no version information on website
