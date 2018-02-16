@@ -15,6 +15,7 @@
 [bully]                      # the original project source is no longer available
 [burpsuite]                  # trial has no version info listed
 [casefile]                   # website uses ajax to generate download
+[checkpwd]                   # no version information on website
 [cisco-router-config]        # no online assets
 [cisco-torch]                # no download link
 [delldrac]                   # no version information on website
