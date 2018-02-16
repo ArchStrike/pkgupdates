@@ -5,6 +5,7 @@
 [arpalert]                   # development stopped
 [asp-audit]                  # the original source is no longer available
 [archstrike-keyring]         # there is no version information
+[bittwist]                   # development stopped
 [bkhive]                     # this package downloads but no link appears to be on sf.net
 [blueranger]                 # original source webpage no longer found
 [bluesnarfer]                # no version information on website (refers to dl as 'original src')
