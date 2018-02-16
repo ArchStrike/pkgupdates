@@ -22,6 +22,7 @@
 [dff-scanner]                # no version information on website
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
 [dmitry]                     # development stopped
+[dns2tcp]                    # no version information on website
 [dnspredict]                 # src only on our repo
 [dpeparser]                  # development stopped
 [dumpzilla]                  # development stopped
