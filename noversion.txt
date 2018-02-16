@@ -2,6 +2,7 @@
 [allthevhosts]               # no version information on website
 [archstrike-mirrorlist]      # mirrorlist
 [archstrike-meta]            # meta pkg
+[arpalert]                   # development stopped
 [asp-audit]                  # the original source is no longer available
 [archstrike-keyring]         # there is no version information
 [bkhive]                     # this package downloads but no link appears to be on sf.net
