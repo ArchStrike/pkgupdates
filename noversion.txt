@@ -31,6 +31,7 @@
 [erase-registrations]        # no version information on website
 [flasm]                      # development stopped
 [ftpmap]                     # development stopped
+[fusil]                      # development stopped
 [fuzzball2]                  # development stopped
 [fuzzdiff]                   # development stopped
 [g711conversions]            # development stopped
