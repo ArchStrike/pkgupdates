@@ -56,6 +56,7 @@
 [inviteflood]                # development stopped
 [iphoneanalyzer]             # development stopped
 [jigsaw]                     # src only on our repo
+[joomscan]                   # no version info && dev stopped
 [kismet-earth]               # src only on our repo
 [karma-hostapd]              # development stopped
 [lbd]                        # development stopped
