@@ -65,6 +65,7 @@
 [lsrtunnel]                  # development stopped
 [memfetch]                   # no version information on website
 [mitmap]                     # src only on our repo
+[morxbrute]                  # development has stopped
 [multimac]                   # development has stopped
 [nbnspoof]                   # development has stopped
 [ncpfs]                      # development has stopped
