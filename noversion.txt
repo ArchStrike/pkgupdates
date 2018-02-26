@@ -105,6 +105,7 @@
 [slowloris6]                 # src only on our repo
 [smtp-fuzz]                  # development stopped
 [smtp-user-enum]             # development stopped
+[spike]                      # no version information on website
 [stegsolve]                  # development has stopped
 [subterfuge]                 # development has stopped and no release version on github
 [sqlbrute]                   # one shot release in 2006
