@@ -128,3 +128,4 @@
 [tbear]                      # no version info
 [stompy]                     # no version info
 [spiderpig-pdffuzzer]        # no version info
+[fs]                         # version locked for beeswarm 0.7.8
