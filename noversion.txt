@@ -84,6 +84,7 @@
 [pytacle]                    # development stopped
 [python2-gmpy]               # locked at 1.17
 [python2-nmap]               # locked at v0.1.4 per authors site
+[qt3]                        # development stopped
 [rdesktop-brute]             # development stopped
 [recstudio]                  # development stopped
 [redirectpoison]             # no version information on website
