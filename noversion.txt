@@ -62,6 +62,7 @@
 [lbd]                        # development stopped
 [libfindrtp]                 # no version information on website
 [libnacl]                    # no version information on website
+[libpcap-1.4]                # version locked
 [lsrtunnel]                  # development stopped
 [memfetch]                   # no version information on website
 [mitmap]                     # src only on our repo
