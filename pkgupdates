@@ -669,6 +669,12 @@ function archversion_function {
                 upver="${upver%% |*}"
                 pacver="${av_output/*pacman: }"
 
+                # Check if upver is date
+                dateupver="$(date -d"$upver" +%Y%m%d 2> /dev/null)"
+                if [[ ! -z "$dateupver" ]]; then
+                    upver="$dateupver"
+                fi
+
                 # Determine the repo directory the package is located in
                 unset repo_dir
 
