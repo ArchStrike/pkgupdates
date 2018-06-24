@@ -666,7 +666,7 @@ function archversion_function {
 
             if [[ "$av_output" =~ ^\ *\[ ]]; then
                 upver="${av_output/*up: }"
-                upver="${upver/ *}"
+                upver="${upver%% |*}"
                 pacver="${av_output/*pacman: }"
 
                 # Determine the repo directory the package is located in
