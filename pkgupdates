@@ -530,20 +530,25 @@ function develversion_function {
             [[ -d 'src' ]] && rm -rf src
             vcs_source=""
             for surl in "${source[@]}"; do
-                if [[ -n $(echo $surl | grep '\.git$' | grep '::git\+') ]]; then 
-                    # Reformat surl from ${pkgname}::git+${url}.git to ${url} so that curl results are as desired
-                    vcs_source="${surl#*git+}"
+                if [[ -n $(echo $surl | grep '\.git$' | grep '::git') ]]; then 
+                    # Transform surl so that curl -si $vcs_source responds consistently
+                    vcs_source=${surl#*git::}
                     vcs_source=${vcs_source%.git}
+                    vcs_source=${vcs_source/git:/https}
+                    vcs_source=${vcs_source/git+/}
                 fi
             done
-            if [[ -n $vcs_source ]] && [[ $(curl -si $vcs_source |& head -n1 | awk '{print $2}') != '200' ]]; then
-                popd >/dev/null
+            [[ -n $vcs_source ]] && vcs_header="$(curl -si $vcs_source |& head -n1)" || vcs_header=""
+            if [[ -n "$vcs_header" ]] && [[ $(echo "$vcs_header" | awk '{print $2}') != '200' ]]; then
                 local error_msg='Recieved a response code that was not 200'
-                local vcs_header="$(curl -si $vcs_source |& head -n1)"
                 printf '\n%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" "$error_msg"  >&2
                 printf '%s %s\n' "${c_m}Log:${c_w}" "$vcs_header$c_c" 
                 printf '     %s\n' "${vcs_source}"
-                continue
+                # Since 301 is that the user changed their username, then do not continue since this can be checked
+                if [[ $(echo "$vcs_header" | awk '{print $2}') != '301' ]]; then 
+                    popd >/dev/null
+                    continue
+                fi
             fi
 
             makepkg -oAd >/dev/null 2>&1
