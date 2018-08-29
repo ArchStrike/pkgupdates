@@ -528,6 +528,24 @@ function develversion_function {
 
             # Remove src if necessary then update the PKGBUILD using makepkg
             [[ -d 'src' ]] && rm -rf src
+            vcs_source=""
+            for surl in "${source[@]}"; do
+                if [[ -n $(echo $surl | grep '\.git$' | grep '::git\+') ]]; then 
+                    # Reformat surl from ${pkgname}::git+${url}.git to ${url} so that curl results are as desired
+                    vcs_source="${surl#*git+}"
+                    vcs_source=${vcs_source%.git}
+                fi
+            done
+            if [[ -n $vcs_source ]] && [[ $(curl -si $vcs_source |& head -n1 | awk '{print $2}') != '200' ]]; then
+                popd >/dev/null
+                local error_msg='Recieved a response code that was not 200'
+                local vcs_header="$(curl -si $vcs_source |& head -n1)"
+                printf '\n%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" "$error_msg"  >&2
+                printf '%s %s\n' "${c_m}Log:${c_w}" "$vcs_header$c_c" 
+                printf '     %s\n' "${vcs_source}"
+                continue
+            fi
+
             makepkg -oAd >/dev/null 2>&1
 
             (( $? )) && {
@@ -663,7 +681,6 @@ function archversion_function {
             printf '\n'
         else
             av_output="$(CONFIG_PACKAGES="$archversion_tmpconf" CACHE_PACKAGES="$archversion_cache" archversion check 2>&1)"
-
             if [[ "$av_output" =~ ^\ *\[ ]]; then
                 upver="${av_output/*up: }"
                 upver="${upver%% |*}"
