@@ -528,27 +528,30 @@ function develversion_function {
 
             # Remove src if necessary then update the PKGBUILD using makepkg
             [[ -d 'src' ]] && rm -rf src
-            vcs_source=""
+            vcs_break='false'
             for surl in "${source[@]}"; do
-                if [[ -n $(echo $surl | grep '\.git$' | grep '::git') ]]; then 
+                if [[ -n $(echo $surl | grep -E '(:git|git:|git\+)') ]]; then
                     # Transform surl so that curl -si $vcs_source responds consistently
-                    vcs_source=${surl#*git::}
+                    vcs_source=${surl#*::}
                     vcs_source=${vcs_source%.git}
                     vcs_source=${vcs_source/git:/https}
                     vcs_source=${vcs_source/git+/}
+                    [[ -n $vcs_source ]] && vcs_header="$(curl -si $vcs_source |& head -n1)" || vcs_header=""
+                    response_code=$(echo "$vcs_header" | awk '{print $2}')
+                    if [[ $response_code != '200' ]]; then
+                        local error_msg='Recieved a response code that was not 200'
+                        printf '%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" "$error_msg"  >&2
+                        printf '%s %s\n' "${c_m}Log:${c_w}" "$vcs_header$c_c"
+                        printf '     %s\n' "${vcs_source}"
+                        # Since 301 is that the user changed their username, then
+                        # do not continue since this can be checked
+                        [[ $response_code != '301' ]] && vcs_break='true'
+                    fi
                 fi
             done
-            [[ -n $vcs_source ]] && vcs_header="$(curl -si $vcs_source |& head -n1)" || vcs_header=""
-            if [[ -n "$vcs_header" ]] && [[ $(echo "$vcs_header" | awk '{print $2}') != '200' ]]; then
-                local error_msg='Recieved a response code that was not 200'
-                printf '\n%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" "$error_msg"  >&2
-                printf '%s %s\n' "${c_m}Log:${c_w}" "$vcs_header$c_c" 
-                printf '     %s\n' "${vcs_source}"
-                # Since 301 is that the user changed their username, then do not continue since this can be checked
-                if [[ $(echo "$vcs_header" | awk '{print $2}') != '301' ]]; then 
-                    popd >/dev/null
-                    continue
-                fi
+            if [[ "$vcs_break" == 'true' ]]; then
+                popd >/dev/null
+                continue
             fi
 
             makepkg -oAd >/dev/null 2>&1
