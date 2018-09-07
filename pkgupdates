@@ -481,6 +481,8 @@ function develversion_function {
             fi
 
             updatelog="$(makepkg -oAd -A 2>&1)"
+            [[ -e src/ ]] && rm -rf src/
+            git clean -xdfq
 
             [[ "$updatelog" =~ 'ERROR:' ]] && {
                 popd >/dev/null
