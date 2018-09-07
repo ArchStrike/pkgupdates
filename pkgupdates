@@ -435,7 +435,7 @@ function develversion_function {
             pushd "$REPODIR/$repo_dir/$pkg" >/dev/null
 
             # Exit and skip this package if a pkgver() function doesn't exist
-            [[ "$(<PKGBUILD)" =~ pkgver\ *\( ]] || {
+            [[ -n "$(grep 'pkgver *(' PKGBUILD)" ]] || {
                 printf '%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" "Package doesn't contain a pkgver() function" >&2
                 popd >/dev/null
                 continue
@@ -459,8 +459,8 @@ function develversion_function {
                 if [[ -n $(echo $surl | grep -E '(:git|git:|git\+)') ]]; then
                     # Transform surl so that curl -si $vcs_source responds consistently
                     vcs_source=${surl#*::}
+                    [[ "$vcs_source" =~ 'git:/' ]] && continue # since curl doesn't support git://
                     vcs_source=${vcs_source%.git}
-                    vcs_source=${vcs_source/git:/https}
                     vcs_source=${vcs_source/git+/}
                     [[ -n $vcs_source ]] && vcs_header="$(curl -si $vcs_source |& head -n1)" || vcs_header=""
                     response_code=$(echo "$vcs_header" | awk '{print $2}')
@@ -480,29 +480,18 @@ function develversion_function {
                 continue
             fi
 
-            makepkg -oAd >/dev/null 2>&1
+            updatelog="$(makepkg -oAd -A 2>&1)"
 
-            (( $? )) && {
-                for dir in *; do
-                    [[ -d "$dir" ]] && rm -rf "$dir"
-                done
-
-                updatelog="$(makepkg -oAd -A 2>&1)"
-
-                (( $? )) && {
-                    popd >/dev/null
-                    printf '\n%s %s %s\n%s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'Could not update sources' "${c_m}Log:$c_w" "$updatelog$c_c" >&2
-                    continue
-                }
+            [[ "$updatelog" =~ 'ERROR:' ]] && {
+                popd >/dev/null
+                printf '\n%s %s %s\n%s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'Could not update sources' "${c_m}Log:$c_w" "$updatelog$c_c" >&2
+                continue
             }
 
             # Parse the updated PKGBUILD to find the upstream package version
             unset epoch pkgver pkgrel
 
-            while read -r; do
-                [[ "$REPLY" =~ ^\ *(epoch|pkgver|pkgrel|_[[:alnum:]_]*)\ *= ]] \
-                    && eval "$REPLY"
-            done < 'PKGBUILD'
+            source PKGBUILD
 
             [[ -n "$epoch" ]] && epoch="${epoch}:"
             upver="$epoch${pkgver}-$pkgrel"
