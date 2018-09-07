@@ -392,12 +392,10 @@ function develversion_function {
                 && develversion_pkglist=("${develversion_pkglist[@]}" "${BASH_REMATCH[0]}")
         done < "$DEVELVERSION_CONF"
     }
-
     # Run for each package defined in the $develversion_pkglist
     for pkg in "${develversion_pkglist[@]}"; do
         # Skip packages in the ignore_pkglist
         ignore=0
-
         for ignorepkg in "${ignore_pkglist[@]}"; do
             [[ "$pkg" =~ ^$ignorepkg$ ]] && ignore=1
         done
@@ -443,88 +441,16 @@ function develversion_function {
                 continue
             }
 
-            # Reset the PKGBUILD and save the pkgver() function
+            # reset PKGBUILD
             git checkout PKGBUILD
-            printing=0
-
-            pkgver_funct="$(while read -r; do
-                case "$printing" in
-                    0)
-                        [[ "$REPLY" =~ ^\ *pkgver\ *\(\)\ *\{ ]] && {
-                            printf '%s\n' "$REPLY"
-                            printing=1
-                        }
-                        ;;
-                    1)
-                        printf '%s\n' "$REPLY"
-                        [[ "$REPLY" =~ ^[^\{\}]*\} ]] && break
-                        ;;
-                esac
-            done < PKGBUILD)"
-
-            # remove all its functions except pkgver()
-            printing=1
-
-            pkgbuild="$(while read -r; do
-                case "$printing" in
-                    1)
-                        if [[ "$REPLY" =~ ^\ *[a-zA-Z]*\(\)\ *\{ ]]; then
-                            printing=0
-                        else
-                            [[ ! "$REPLY" =~ ^\ *$ ]] \
-                                && printf '%s\n' "$REPLY"
-                        fi
-                        ;;
-                    0)
-                        [[ "$REPLY" =~ ^[^\{\}]*\} ]] \
-                            && printing=1
-                        ;;
-                esac
-            done < PKGBUILD)"
-
-            printf '%s\n' "$pkgbuild" > PKGBUILD
-            printf '%s\n' "$pkgver_funct" >> PKGBUILD
-            unset pkgver_funct printing pkgbuild
-
-            # Calculate the full package version, including epoch (if applicable), pkgver and pkgrel
-            unset pkgname epoch pkgver pkgrel
+            # source PKGBUILD to verify URLs resolve
             source PKGBUILD
-            [[ -n "$epoch" ]] && epoch="$epoch:"
-            pacver="$epoch$pkgver-$pkgrel"
-
-            # Exit with an error if $pkgname doesn't match $pkg
-            [[ "$pkgname" = "$pkg" ]] || {
-                printf '%s %s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'The real pkgname is' "$c_m$pkgname$c_c" >&2
-                popd >/dev/null
-                continue
-            }
-
-            # Create a blank package function (or a blank one for each split package)
-            if [[ "${#pkgname[*]}" = 1 ]]; then
-                # If this is not a split package, add one package() to the PKGBUILD
-                printf '%s\n    %s\n%s\n' 'package() {' 'return 0' '}' >> PKGBUILD
-            else
-                # If this is a split package, add one package() per split to the PKGBUILD
-                for name in "${pkgname[@]}"; do
-                    printf '%s\n    %s\n%s\n' "package_$name() {" 'return 0' '}' >> PKGBUILD
-                done
-            fi
-
-            # Unset all checksums then add each VCS source and an associated 'SKIP' checksum to the PKGBUILD
-            printf '%s\n' 'unset md5sums sha1sums sha256sums sha384sums sha512sums' >> PKGBUILD
-            src_array='source=('
-            sha_array='sha512sums=('
-            printf '\n' >> PKGBUILD
-
             for src in "${source[@]}"; do
                 [[ "${src/*::}" =~ ^\ *(bzr|csv|git|hg|darcs|svn)[^a-zA-Z0-9] ]] && {
                     src_array="$src_array '$src'"
                     sha_array="$sha_array 'SKIP'"
                 }
             done
-
-            printf '%s\n' "${src_array/\( /\(})" >> PKGBUILD
-            printf '%s\n' "${sha_array/\( /\(})" >> PKGBUILD
 
             # Remove src if necessary then update the PKGBUILD using makepkg
             [[ -d 'src' ]] && rm -rf src
