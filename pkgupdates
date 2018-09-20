@@ -509,7 +509,7 @@ function develversion_function {
             if [[ "$pacdb_pacver" = "$pacver" ]]; then
                 vercmp_handle "$pkg" "$upver" "$pacver"
             else
-                vercmp_handle "$pkg" "$upver" "$pacdb_pacver" "$pacver"
+                vercmp_handle "$pkg" "$upver" "$pacdb_pacver"
             fi
         }
     done
