@@ -452,7 +452,7 @@ function develversion_function {
                 }
             done
 
-            # Remove src if necessary then update the PKGBUILD using makepkg
+            # Check if url can be resolved
             [[ -d 'src' ]] && rm -rf src
             vcs_break='false'
             for surl in "${source[@]}"; do
@@ -479,17 +479,6 @@ function develversion_function {
                 popd >/dev/null
                 continue
             fi
-
-            updatelog="$(makepkg -oAd -A 2>&1)"
-            [[ -e src/ ]] && rm -rf src/
-            git clean -xdfq
-
-            [[ "$updatelog" =~ 'ERROR:' ]] && {
-                popd >/dev/null
-                printf '\n%s %s %s\n%s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'Could not update sources' "${c_m}Log:$c_w" "$updatelog$c_c" >&2
-                continue
-            }
-
             # Parse the updated PKGBUILD to find the upstream package version
             unset epoch pkgver pkgrel
 
