@@ -86,6 +86,10 @@ versioncomp_lock_file="$PKGUPDATES_TMPDIR/versioncomp.lock"
 packagercheck_lock_file="$PKGUPDATES_TMPDIR/packagercheck.lock"
 git_lock_file="$PKGUPDATES_TMPDIR/git.lock"
 
+# Log files
+archversion_log_file="$PKGUPDATES_TMPDIR/archversion.log"
+develversion_log_file="$PKGUPDATES_TMPDIR/develversion.log"
+
 # Lock states
 archversion_lock=0
 develversion_lock=0
@@ -260,7 +264,7 @@ function vercomp_display {
     local pacname="$c_w$1$c_c"
     local upver="$2"
     local pacver="$3"
-    local pacdb_pacver="$4" 
+    local pacdb_pacver="$4"
 
     local upver_display="${c_y}up: $upver$c_c"
     local pkgver_display=""
@@ -450,7 +454,9 @@ function develversion_function {
             # reset PKGBUILD
             git checkout PKGBUILD
             # update the pkgver
-            makepkg -cdo
+            printf '# %s\n' ${pkg^^} &>> "$develversion_log_file"
+            makepkg -cdo &>> "$develversion_log_file"
+            printf '\n\n' &>> "$develversion_log_file"
             # source PKGBUILD to verify URLs resolve
             source PKGBUILD
             for src in "${source[@]}"; do
@@ -994,6 +1000,7 @@ done
     else
         archversion_lock=1
         touch "$archversion_lock_file"
+        > "$archversion_log_file"
         archversion_function
         rm -f "$archversion_lock_file"
         archversion_lock=0
@@ -1007,6 +1014,7 @@ done
     else
         develversion_lock=1
         touch "$develversion_lock_file"
+        > "$develversion_log_file"
         develversion_function
         rm -f "$develversion_lock_file"
         develversion_lock=0
