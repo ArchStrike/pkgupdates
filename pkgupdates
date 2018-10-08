@@ -252,13 +252,19 @@ function git_info {
 
 # HELPER FUNCTION: Output readible results of a version comparison
 function vercomp_display {
+    # "up:" indicates the upstream version found using archversion.conf or develversion.conf
+    # "live:" indicates the version live on the mirror
+    # "git:" indicates the version from the PKGBUILD in the git repository (a.k.a. `pkgrepo`)
     local author=''
     local divider="$c_b|$c_c"
     local pacname="$c_w$1$c_c"
-    local upver_display="${c_y}up: $2$c_c"
-    local pkgver_display="$3"
+    local upver="$2"
+    local pacver="$3"
+    local pacdb_pacver="$4" 
 
-    [[ -n "$4" ]] && pkgver_display="$pkgver_display $divider $4"
+    local upver_display="${c_y}up: $upver$c_c"
+    local pkgver_display=""
+    [[ -n "$pacdb_pacver" ]] && pkgver_display="$pacver $divider $pacdb_pacver" || pkgver_display="$pacver"
 
     # Find the most recent git author for the package if $git_author_show is set
     [[ -n "$git_author_show" || -n "$git_date_show" ]] \
@@ -443,6 +449,8 @@ function develversion_function {
 
             # reset PKGBUILD
             git checkout PKGBUILD
+            # update the pkgver
+            makepkg -cdo
             # source PKGBUILD to verify URLs resolve
             source PKGBUILD
             for src in "${source[@]}"; do
