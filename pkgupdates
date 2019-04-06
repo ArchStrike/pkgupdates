@@ -386,7 +386,6 @@ function load_repodb {
 
 # DEVELVERSION: VCS package version check
 function develversion_function {
-    printf 'Running develversion_function\n'
     # Declare the repo package array
     declare -a repo_packages=()
 
