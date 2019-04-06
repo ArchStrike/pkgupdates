@@ -386,6 +386,7 @@ function load_repodb {
 
 # DEVELVERSION: VCS package version check
 function develversion_function {
+    printf 'Running develversion_function\n'
     # Declare the repo package array
     declare -a repo_packages=()
 
@@ -402,6 +403,7 @@ function develversion_function {
                 && develversion_pkglist=("${develversion_pkglist[@]}" "${BASH_REMATCH[0]}")
         done < "$DEVELVERSION_CONF"
     }
+    git pull
     # Run for each package defined in the $develversion_pkglist
     for pkg in "${develversion_pkglist[@]}"; do
         # Skip packages in the ignore_pkglist
@@ -451,8 +453,6 @@ function develversion_function {
                 continue
             }
 
-            # reset PKGBUILD
-            git checkout PKGBUILD
             # update the pkgver
             printf '# %s\n' ${pkg^^} &>> "$develversion_log_file"
             makepkg -cdo &>> "$develversion_log_file"
