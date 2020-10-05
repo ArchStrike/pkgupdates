@@ -166,6 +166,27 @@ function error {
     esac
 }
 
+# HELPER FUNCTION: assumes parameters are paths to locks and 
+function is_unlocked {
+    locked=()
+    for lock in "$@"; do
+        if [[ -e "$lock" ]]; then
+            locked+=( "$lock" )
+        fi
+    done
+    if [[ ${#locked[@]} -gt 0 ]] && [[ -n "$force" ]]; then
+        warn "Force run despite locked state for ${locked[@]}"
+        locked=()
+    fi
+
+    if [[ ${#locked[@]} -eq 0 ]]; then
+        true
+    else
+        warn "Found locked state for ${locked[@]}"
+        false
+    fi
+}
+
 # HELPER FUNCTION: Set settings variables depending on the arguments pasted to this function
 function paramparse {
     case "$1" in
@@ -198,6 +219,9 @@ function paramparse {
             ;;
         -u|u)
             updateversion=1
+            ;;
+        -f|f)
+            force=1
             ;;
         -v|v)
             versioncomp=1
@@ -330,7 +354,7 @@ function vercmp_handle {
 
 # HELPER FUNCTION: (Re)-Initialize the pkgupdates repo
 function init_gitrepo {
-    [[ ! -f "$git_lock_file" ]] && {
+    if is_unlocked "$archversion_lock_file" "$develversion_lock_file" "$git_lock_file"; then
         git_lock=1
         touch "$git_lock_file"
 
@@ -340,7 +364,7 @@ function init_gitrepo {
 
             # Reset and update the repo
             git reset --hard >/dev/null 2>&1
-            git pull >/dev/null 2>&1
+            git pull --ff-only >/dev/null 2>&1
             rm .gitignore
             git clean -dffq >/dev/null 2>&1
             git checkout .gitignore
@@ -352,7 +376,7 @@ function init_gitrepo {
 
         rm -f "$git_lock_file"
         git_lock=0
-    }
+    fi
 }
 
 function load_repodb {
@@ -402,7 +426,7 @@ function develversion_function {
                 && develversion_pkglist=("${develversion_pkglist[@]}" "${BASH_REMATCH[0]}")
         done < "$DEVELVERSION_CONF"
     }
-    git pull
+    git pull --ff-only
     # Run for each package defined in the $develversion_pkglist
     for pkg in "${develversion_pkglist[@]}"; do
         # Skip packages in the ignore_pkglist
@@ -988,15 +1012,11 @@ done
     && error 'The debug option (-b|b) must be run with -c|c' 1
 
 # Update the git repo
-[[ -n "$archversion" || -n "$develversion" ]] \
-    && [[ ! -e "$archversion_lock_file" && ! -e "$develversion_lock_file" ]] \
-        && init_gitrepo
+[[ -n "$archversion" || -n "$develversion" ]] && init_gitrepo
 
 # Archversion
 [[ -n "$archversion" ]] && {
-    if [[ -e "$archversion_lock_file" ]]; then
-        warn 'Skipping the archversion function as it is already running'
-    else
+    if is_unlocked "$archversion_lock_file"; then
         archversion_lock=1
         touch "$archversion_lock_file"
         > "$archversion_log_file"
@@ -1008,9 +1028,7 @@ done
 
 # Develversion
 [[ -n "$develversion" ]] && {
-    if [[ -e "$develversion_lock_file" ]]; then
-        warn 'Skipping the develversion function as it is already running'
-    else
+    if is_unlocked "$develversion_lock_file"; then
         develversion_lock=1
         touch "$develversion_lock_file"
         > "$develversion_log_file"
@@ -1022,9 +1040,7 @@ done
 
 # Packager Check
 [[ -n "$packagercheck" ]] && {
-    if [[ -e "$packagercheck_lock_file" ]]; then
-        warn 'Skipping the packager check as it is already running'
-    else
+    if is_unlock "$packagercheck_lock_file"; then
         packagercheck_lock=1
         touch "$packagercheck_lock_file"
         packagercheck_function
@@ -1038,14 +1054,14 @@ done
 
 # Version Compare
 [[ -n "$versioncomp" ]] && {
-    if [[ -e "$versioncomp_lock_file" ]]; then
-        warn 'Skipping the version compare function as it is already running'
-    else
+    if [[ -n "$force" ]] || [[ ! -e "$versioncomp_lock_file" ]]; then
         versioncomp_lock=1
         touch "$versioncomp_lock_file"
         versioncompare_function
         rm -f "$versioncomp_lock_file"
         versioncomp_lock=0
+    else
+        warn 'Lock not available for version comparison. Skipping...'
     fi
 }
 
