@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+"""Use the pkgrepo directory cloned by pkupdates to determine helpful maintenance info
+ - deprecated packages that are defined in a pkgupdates conf
+ - packages that should, but do not, have a pkgupdates conf
+ - packages that are pending and have an active pkgupdates conf
+The confs that pkgupdates uses are develversion.conf, archversion.conf, or noversion.txt
+"""
 import re
 import pathlib
 
@@ -20,14 +26,17 @@ def _parse_pkgnames(pkgbuild):
         yield pkgbuild.parts[-2]
 
 
+def get_pending_packages():
+    pending = pathlib.Path(pkgupdates, 'pkgrepo', 'pending')
+    for pkgbuild in pending.glob('**/PKGBUILD'):
+        yield pkgbuild.parts[-2]
+
+
 def get_pkgrepo_packages():
     archstrike = pathlib.Path(pkgupdates, 'pkgrepo', 'archstrike')
     for pkgbuild in archstrike.glob('**/PKGBUILD'):
         for pkgname in _parse_pkgnames(pkgbuild):
             yield pkgname
-    pending = pathlib.Path(pkgupdates, 'pkgrepo', 'pending')
-    for pkgbuild in pending.glob('**/PKGBUILD'):
-        yield pkgbuild.parts[-2]
 
 
 def get_develversion_packages():
@@ -60,6 +69,13 @@ def find_conf_deprecated(pkgrepo_packages, other_conf_packages, conf_packages, c
         print("\n".join(deprecated_packages))
 
 
+def find_conf_pending(pending_packages, conf_packages, confname):
+    pending_confs = pending_packages.intersection(conf_packages)
+    if pending_confs:
+        print(f"\033[91m# Pending packages found in {confname}\033[0m")
+        print("\n".join(pending_confs))
+
+
 def find_conf_missing(pkgrepo_packages, all_conf_packages):
     missing_packages = sorted(pkgrepo_packages - all_conf_packages)
     if missing_packages:
@@ -69,13 +85,20 @@ def find_conf_missing(pkgrepo_packages, all_conf_packages):
 
 if __name__ == "__main__":
     pkgrepo_packages = set([p for p in get_pkgrepo_packages()])
+    pending_packages = set([p for p in get_pending_packages()])
     develversion_packages = set([p for p in get_develversion_packages()])
     archversion_packages = set([p for p in get_archversion_packages()])
     noversion_packages = set([p for p in get_noversion_packages()])
-    find_conf_deprecated(pkgrepo_packages, noversion_packages.union(archversion_packages),
+    find_conf_deprecated(pkgrepo_packages.union(pending_packages),
+                         noversion_packages.union(archversion_packages),
                          develversion_packages, "develversion.conf")
-    find_conf_deprecated(pkgrepo_packages, noversion_packages.union(develversion_packages),
+    find_conf_deprecated(pkgrepo_packages.union(pending_packages),
+                         noversion_packages.union(develversion_packages),
                          archversion_packages, "archversion.conf")
-    find_conf_deprecated(pkgrepo_packages, archversion_packages.union(develversion_packages),
+    find_conf_deprecated(pkgrepo_packages.union(pending_packages),
+                         archversion_packages.union(develversion_packages),
                          noversion_packages, "noversion.txt")
     find_conf_missing(pkgrepo_packages, archversion_packages.union(develversion_packages).union(noversion_packages))
+    find_conf_pending(pending_packages, archversion_packages, "archversion.conf")
+    find_conf_pending(pending_packages, develversion_packages, "develversion.conf")
+    find_conf_pending(pending_packages, noversion_packages, "noversion.txt")

@@ -54,8 +54,8 @@ def run_pkgupdates(args):
             logger.info(home_re.sub('', line.rstrip()))
 
 
-def run_find_missing(args):
-    find_missing = pathlib.Path(args.repository, "extras", "find-missing")
+def run_find_conf_maintenance(args):
+    find_missing = pathlib.Path(args.repository, "extras", "find-conf-maintenance")
     with Popen([find_missing], stdout=PIPE, stderr=STDOUT, cwd=args.repository, text=True) as proc:
         for line in proc.stdout:
             logger.info(home_re.sub('', line.rstrip()))
@@ -67,7 +67,7 @@ def main():
     pull_pkgupdates(args)
     logger.info(get_rfc_datetime_now())
     run_pkgupdates(args)
-    run_find_missing(args)
+    run_find_conf_maintenance(args)
     logger.info(get_rfc_datetime_now())
 
 
