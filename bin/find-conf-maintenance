@@ -79,7 +79,7 @@ def find_conf_pending(pending_packages, conf_packages, confname):
 def find_conf_missing(pkgrepo_packages, all_conf_packages):
     missing_packages = sorted(pkgrepo_packages - all_conf_packages)
     if missing_packages:
-        print("\033[91m# Missing packages\033[0m")
+        print("\033[91m# Missing configuration packages\033[0m")
         print("\n".join(missing_packages))
 
 
