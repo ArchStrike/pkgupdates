@@ -5,12 +5,26 @@ import pathlib
 pkgupdates = pathlib.Path(__file__).resolve().parent.parent
 archversion = pathlib.Path(pkgupdates, 'archversion.conf')
 archpkg_re = re.compile(r'^\[(?P<package>(?!DEFAULT).*)\]', re.M)
+splitpkg_re = re.compile(r'^pkgname=\((?P<names>[^)]*)\)', re.M)
+splitpkg_func_re = re.compile(r'^package_(?P<name>[^( ]*)', re.M)
+
+
+def _parse_pkgnames(pkgbuild):
+    with pkgbuild.open() as fhandle:
+        fcontent = fhandle.read()
+    match = splitpkg_re.search(fcontent)
+    if match:
+        for func_match in splitpkg_func_re.finditer(fcontent):
+            yield func_match.group('name')
+    else:
+        yield pkgbuild.parts[-2]
 
 
 def get_pkgrepo_packages():
     archstrike = pathlib.Path(pkgupdates, 'pkgrepo', 'archstrike')
     for pkgbuild in archstrike.glob('**/PKGBUILD'):
-        yield pkgbuild.parts[-2]
+        for pkgname in _parse_pkgnames(pkgbuild):
+            yield pkgname
     pending = pathlib.Path(pkgupdates, 'pkgrepo', 'pending')
     for pkgbuild in pending.glob('**/PKGBUILD'):
         yield pkgbuild.parts[-2]
