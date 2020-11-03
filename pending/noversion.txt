@@ -1,0 +1,35 @@
+[archstrike-meta]            # meta pkg
+[bluepot]                    # development stopped
+[blueranger]                 # original source webpage no longer found
+[casefile]                   # website uses ajax to generate download
+[delldrac]                   # no version information on website
+[dmitry]                     # development stopped
+[dns2tcp]                    # no version information on website
+[flasm]                      # development stopped
+[fusil]                      # development stopped
+[fuzzball2]                  # development stopped
+[galleta]                    # development stopped
+[goog-mail]                  # no version information on website
+[grabber]                    # development stopped
+[hbad]                       # no version information on website
+[kismet-earth]               # src only on our repo
+[morxbrute]                  # development has stopped
+[ncpfs]                      # development has stopped
+[nfsshell]                   # development has stopped
+[nsdtool]                    # no version information on website
+[pytacle]                    # development stopped
+[qt3]                        # development stopped
+[rdesktop-brute]             # development stopped
+[rinetd]                     # development stopped
+[rtp-flood]                  # no version information on website
+[shellter]                   # src is put on the same file on each different version
+[sakis3g]                    # development stopped
+[sfuzz]                      # development stopped
+[smtp-fuzz]                  # development stopped
+[spike]                      # no version information on website
+[spike-proxy]                # no version information on website
+[teardown]                   # development stopped
+[tpcat]                      # Src is a single python file has not been touched since 2009
+[umit]                       # Project is shutdown per pkgurl
+[uniscan]                    # development has stopped
+[spiderpig-pdffuzzer]        # no version info

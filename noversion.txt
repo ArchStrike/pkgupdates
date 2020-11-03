@@ -1,48 +1,34 @@
 [0trace]                     # one shot release in 2007 and there won't be more
 [allthevhosts]               # no version information on website
 [archstrike-mirrorlist]      # mirrorlist
-[archstrike-meta]            # meta pkg
 [arpalert]                   # development stopped
 [asp-audit]                  # the original source is no longer available
 [archstrike-keyring]         # there is no version information
 [bittwist]                   # development stopped
 [bkhive]                     # this package downloads but no link appears to be on sf.net
-[bluepot]                    # development stopped
-[blueranger]                 # original source webpage no longer found
 [bluesnarfer]                # no version information on website (refers to dl as 'original src')
 [brutessh]                   # this used to be parsed out of the google code repo which is now archived
 [bss]                        # archversion can't decode site (fails with: 'utf-8' codec can't decode)
 [burpsuite]                  # trial has no version info listed
-[casefile]                   # website uses ajax to generate download
 [cisco-router-config]        # no online assets
 [cisco-torch]                # no download link
-[delldrac]                   # no version information on website
 [dff-scanner]                # no version information on website
 [dirbuster]                  # is no longer maintained is replaced by zap proxy
-[dmitry]                     # development stopped
-[dns2tcp]                    # no version information on website
 [dnspredict]                 # src only on our repo
 [dpeparser]                  # development stopped
 [dumpzilla]                  # development stopped
 [eindeutig]                  # one shot release
 [ent]                        # no version information on website
 [erase-registrations]        # no version information on website
-[flasm]                      # development stopped
 [ftpmap]                     # development stopped
-[fusil]                      # development stopped
-[fuzzball2]                  # development stopped
 [fuzzdiff]                   # development stopped
 [g711conversions]            # development stopped
 [g72x]                       # no version information on website
-[galleta]                    # development stopped
 [goodork]                    # development stopped
-[goog-mail]                  # no version information on website
 [gooscan]                    # no version information on website
-[grabber]                    # development stopped
 [grepforrfi]                 # one shot release
 [hack_library]               # development stopped
 [hash-identifier]            # src last updated 2011
-[hbad]                       # no version information on website
 [http-fuzz]                  # no version information on website
 [httprint]                   # development stopped
 [iaxflood]                   # no version information on website
@@ -52,7 +38,6 @@
 [iphoneanalyzer]             # development stopped
 [jigsaw]                     # src only on our repo
 [joomscan]                   # no version info && dev stopped
-[kismet-earth]               # src only on our repo
 [karma-hostapd]              # development stopped
 [lbd]                        # development stopped
 [libnacl]                    # no version information on website
@@ -60,12 +45,8 @@
 [mdcrack]                    # development has stopped
 [memfetch]                   # no version information on website
 [mitmap]                     # src only on our repo
-[morxbrute]                  # development has stopped
 [multimac]                   # development has stopped
 [nbnspoof]                   # development has stopped
-[ncpfs]                      # development has stopped
-[nfsshell]                   # development has stopped
-[nsdtool]                    # no version information on website
 [pasco]                      # one shot release in 2004
 [paketto]                    # development stopped
 [pblind]                     # no version information of website
@@ -74,34 +55,20 @@
 [pngcheck]                   # development stopped
 [powerfuzzer]                # development stopped
 [pscan]                      # no version information on website
-[pytacle]                    # development stopped
 [python2-gmpy]               # locked at 1.17
 [python2-nmap]               # locked at v0.1.4 per authors site
-[qt3]                        # development stopped
-[rdesktop-brute]             # development stopped
 [redirectpoison]             # no version information on website
 [reglookup]                  # development stopped
 [rfidtool]                   # development stopped
-[rinetd]                     # development stopped
 [ropeme]                     # zips from master
-[rtp-flood]                  # no version information on website
 [ruby-zip]                   # locked at 1.9
-[shellter]                   # src is put on the same file on each different version
-[sakis3g]                    # development stopped
 [scalpel]                    # development stopped
-[sfuzz]                      # development stopped
 [slowloris]                  # src only on our repo
 [slowloris6]                 # src only on our repo
-[smtp-fuzz]                  # development stopped
 [smtp-user-enum]             # development stopped
-[spike]                      # no version information on website
-[spike-proxy]                # no version information on website
 [stegsolve]                  # development has stopped
 [sqlbrute]                   # one shot release in 2006
 [tcptraceroute]              # Authors website is down project is dead
-[teardown]                   # development stopped
-[tpcat]                      # Src is a single python file has not been touched since 2009
-[umit]                       # Project is shutdown per pkgurl
 [webrute]                    # src doesnt exist out of repo
 [wmat]			                 # src website is dead
 [pyminifakedns]              # src on our repo
@@ -110,8 +77,6 @@
 [wsfuzzer]                   # inactive OWASP project
 [voipong]                    # development has stopped
 [vega]                       # no version info at url/source
-[uniscan]                    # development has stopped
 [tbear]                      # no version info
 [stompy]                     # no version info
-[spiderpig-pdffuzzer]        # no version info
 [fs]                         # version locked for beeswarm 0.7.8
