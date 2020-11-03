@@ -47,15 +47,27 @@ def get_rfc_datetime_now():
     return email.utils.format_datetime(now)
 
 
+def run_pkgupdates(args):
+    pkgupdates = pathlib.Path(args.repository, "pkgupdates")
+    with Popen([pkgupdates, "-cdnf"], stdout=PIPE, stderr=STDOUT, cwd=args.repository, text=True) as proc:
+        for line in proc.stdout:
+            logger.info(home_re.sub('', line.rstrip()))
+
+
+def run_find_missing(args):
+    find_missing = pathlib.Path(args.repository, "extras", "find-missing")
+    with Popen([find_missing], stdout=PIPE, stderr=STDOUT, cwd=args.repository, text=True) as proc:
+        for line in proc.stdout:
+            logger.info(home_re.sub('', line.rstrip()))
+
+
 def main():
     args = parse_args()
     config_logging(args)
     pull_pkgupdates(args)
     logger.info(get_rfc_datetime_now())
-    pkgupdates = pathlib.Path(args.repository, "pkgupdates")
-    with Popen([pkgupdates, "-cdnf"], stdout=PIPE, stderr=STDOUT, cwd=args.repository, text=True) as proc:
-        for line in proc.stdout:
-            logger.info(home_re.sub('', line))
+    run_pkgupdates(args)
+    run_find_missing(args)
     logger.info(get_rfc_datetime_now())
 
 
