@@ -6,4 +6,4 @@ The file `archversion.conf` defines a upstream URL, version regex, and a Python 
 ```
 ./pkgupdates -cdn +pkgname
 ``` 
-For `pkgupdates`, the `-x` option will display more examples of how to do custom version checks. The script `extras/cron-pkgupdates` will function better as a cron job than the underlying `pkgupdates`.
+For `pkgupdates`, the `-x` option will display more examples of how to do custom version checks. The script `bin/cron-pkgupdates` will function better as a cron job than the underlying `pkgupdates`.

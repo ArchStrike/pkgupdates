@@ -55,7 +55,7 @@ def run_pkgupdates(args):
 
 
 def run_find_conf_maintenance(args):
-    find_missing = pathlib.Path(args.repository, "extras", "find-conf-maintenance")
+    find_missing = pathlib.Path(args.repository, "bin", "find-conf-maintenance")
     with Popen([find_missing], stdout=PIPE, stderr=STDOUT, cwd=args.repository, text=True) as proc:
         for line in proc.stdout:
             logger.info(home_re.sub('', line.rstrip()))
