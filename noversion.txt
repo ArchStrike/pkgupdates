@@ -12,10 +12,8 @@
 [bluesnarfer]                # no version information on website (refers to dl as 'original src')
 [brutessh]                   # this used to be parsed out of the google code repo which is now archived
 [bss]                        # archversion can't decode site (fails with: 'utf-8' codec can't decode)
-[bully]                      # the original project source is no longer available
 [burpsuite]                  # trial has no version info listed
 [casefile]                   # website uses ajax to generate download
-[checkpwd]                   # no version information on website
 [cisco-router-config]        # no online assets
 [cisco-torch]                # no download link
 [delldrac]                   # no version information on website
@@ -37,15 +35,12 @@
 [g711conversions]            # development stopped
 [g72x]                       # no version information on website
 [galleta]                    # development stopped
-[gggooglescan]               # development stopped
-[ghettotooth]                # no version information on website
 [goodork]                    # development stopped
 [goog-mail]                  # no version information on website
 [gooscan]                    # no version information on website
 [grabber]                    # development stopped
 [grepforrfi]                 # one shot release
 [hack_library]               # development stopped
-[hamster]                    # development stopped
 [hash-identifier]            # src last updated 2011
 [hbad]                       # no version information on website
 [http-fuzz]                  # no version information on website
@@ -60,9 +55,7 @@
 [kismet-earth]               # src only on our repo
 [karma-hostapd]              # development stopped
 [lbd]                        # development stopped
-[libfindrtp]                 # no version information on website
 [libnacl]                    # no version information on website
-[libpcap-1.4]                # version locked
 [lsrtunnel]                  # development stopped
 [mdcrack]                    # development has stopped
 [memfetch]                   # no version information on website
@@ -73,7 +66,6 @@
 [ncpfs]                      # development has stopped
 [nfsshell]                   # development has stopped
 [nsdtool]                    # no version information on website
-[ohrwurm]		                 # src is dead, was last updated 2010
 [pasco]                      # one shot release in 2004
 [paketto]                    # development stopped
 [pblind]                     # no version information of website
@@ -81,24 +73,18 @@
 [pdfbook-analyzer]           # development stopped
 [pngcheck]                   # development stopped
 [powerfuzzer]                # development stopped
-[proxyp]                     # has not been updated since 2013-12-06
 [pscan]                      # no version information on website
 [pytacle]                    # development stopped
 [python2-gmpy]               # locked at 1.17
 [python2-nmap]               # locked at v0.1.4 per authors site
 [qt3]                        # development stopped
 [rdesktop-brute]             # development stopped
-[recstudio]                  # development stopped
 [redirectpoison]             # no version information on website
 [reglookup]                  # development stopped
 [rfidtool]                   # development stopped
 [rinetd]                     # development stopped
 [ropeme]                     # zips from master
-[rtpinsertsound]             # no version information on website
-[rtpmixsound]                # no version information on website
 [rtp-flood]                  # no version information on website
-[ruby1.9]                    # locked at 1.9
-[ruby1.9-bundler]            # locked at 1.9
 [ruby-zip]                   # locked at 1.9
 [shellter]                   # src is put on the same file on each different version
 [sakis3g]                    # development stopped
@@ -111,14 +97,12 @@
 [spike]                      # no version information on website
 [spike-proxy]                # no version information on website
 [stegsolve]                  # development has stopped
-[subterfuge]                 # development has stopped and no release version on github
 [sqlbrute]                   # one shot release in 2006
 [tcptraceroute]              # Authors website is down project is dead
 [teardown]                   # development stopped
 [tpcat]                      # Src is a single python file has not been touched since 2009
 [umit]                       # Project is shutdown per pkgurl
 [webrute]                    # src doesnt exist out of repo
-[webscarab]                  # is no longer maintained is replaced by zap proxy
 [wmat]			                 # src website is dead
 [pyminifakedns]              # src on our repo
 [python2-xdot]               # 0.6 is the last python2 version, until we need python-xdot this pkg is locked
@@ -127,7 +111,6 @@
 [voipong]                    # development has stopped
 [vega]                       # no version info at url/source
 [uniscan]                    # development has stopped
-[tftp-bruteforce]            # no version info
 [tbear]                      # no version info
 [stompy]                     # no version info
 [spiderpig-pdffuzzer]        # no version info
