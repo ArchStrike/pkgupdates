@@ -19,7 +19,7 @@ done < <(set -o posix ; set)
 script_name="${0//*\/}"
 script_dir="$(realpath ${0%/bin/$script_name})"
 
-if [[ -z "$script_dir" ]]; then
+if [[ -z "${script_dir#/usr}" ]]; then
     script_dir="$PWD"
 else
     pushd "$script_dir" >/dev/null
