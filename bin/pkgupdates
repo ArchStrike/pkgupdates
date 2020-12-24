@@ -14,9 +14,6 @@ home_re = re.compile(r'/home/.*?[^\\]/', re.M)
 bin_path = pathlib.Path(__file__).resolve().parent
 pkgupdates_sync = bin_path.joinpath('pkgupdates-sync')
 pkgupdates_maintenance = bin_path.joinpath('pkgupdates-maintenance')
-if not pkgupdates_sync.exists() and not pkgupdates_maintenance.exists():
-    pkgupdates_sync = pathlib.Path('/usr/bin/', pkgupdates_sync.stem)
-    pkgupdates_maintenance = pathlib.Path('/usr/bin/', pkgupdates_maintenance.stem)
 
 
 def parse_args():
