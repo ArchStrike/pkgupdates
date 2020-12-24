@@ -5,14 +5,18 @@ import email.utils
 import logging
 import logging.handlers
 import pathlib
-import git
 import re
 from subprocess import Popen, PIPE, STDOUT
 
 
 logger = logging
-REPO_URL = 'https://github.com/ArchStrike/pkgupdates.git'
 home_re = re.compile(r'/home/.*?[^\\]/', re.M)
+bin_path = pathlib.Path(__file__).resolve().parent
+pkgupdates_sync = bin_path.joinpath('pkgupdates-sync')
+pkgupdates_maintenance = bin_path.joinpath('pkgupdates-maintenance')
+if not pkgupdates_sync.exists() and not pkgupdates_maintenance.exists():
+    pkgupdates_sync = pathlib.Path('/usr/bin/', pkgupdates_sync.stem)
+    pkgupdates_maintenance = pathlib.Path('/usr/bin/', pkgupdates_maintenance.stem)
 
 
 def parse_args():
@@ -33,30 +37,19 @@ def config_logging(args):
     logging.basicConfig(format='%(message)s', level=logging.INFO, handlers=[h_file, h_stream])
 
 
-def pull_pkgupdates(args):
-    if args.repository.exists():
-        repo = git.Repo(args.repository)
-    else:
-        repo = git.Repo.clone_from(REPO_URL, args.repository)
-    repo.heads.master.checkout()
-    repo.remotes.origin.pull()
-
-
 def get_rfc_datetime_now():
     now = datetime.datetime.now()
     return email.utils.format_datetime(now)
 
 
-def run_pkgupdates(args):
-    pkgupdates = pathlib.Path(args.repository, "pkgupdates")
-    with Popen([pkgupdates, "-cdnf"], stdout=PIPE, stderr=STDOUT, cwd=args.repository, text=True) as proc:
+def run_sync(args):
+    with Popen([pkgupdates_sync, "-cdnf"], stdout=PIPE, stderr=STDOUT, cwd=args.repository, text=True) as proc:
         for line in proc.stdout:
             logger.info(home_re.sub('', line.rstrip()))
 
 
-def run_find_conf_maintenance(args):
-    find_missing = pathlib.Path(args.repository, "bin", "find-conf-maintenance")
-    with Popen([find_missing], stdout=PIPE, stderr=STDOUT, cwd=args.repository, text=True) as proc:
+def run_maintenance(args):
+    with Popen([pkgupdates_maintenance], stdout=PIPE, stderr=STDOUT, cwd=args.repository, text=True) as proc:
         for line in proc.stdout:
             logger.info(home_re.sub('', line.rstrip()))
 
@@ -64,10 +57,9 @@ def run_find_conf_maintenance(args):
 def main():
     args = parse_args()
     config_logging(args)
-    pull_pkgupdates(args)
     logger.info(get_rfc_datetime_now())
-    run_pkgupdates(args)
-    run_find_conf_maintenance(args)
+    run_sync(args)
+    run_maintenance(args)
     logger.info(get_rfc_datetime_now())
 
 
