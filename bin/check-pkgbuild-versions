@@ -17,7 +17,7 @@ done < <(set -o posix ; set)
 
 # Store information about the script and change to the script directory
 script_name="${0//*\/}"
-script_dir="${0%$script_name}"
+script_dir="$(realpath ${0%/bin/$script_name})"
 
 if [[ -z "$script_dir" ]]; then
     script_dir="$PWD"
