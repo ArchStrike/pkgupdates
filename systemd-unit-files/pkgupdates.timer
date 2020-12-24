@@ -1,0 +1,8 @@
+[Unit]
+Description=Run pkgupdates every four hours
+
+[Timer]
+OnCalendar=OnCalendar=0/6:00:00
+
+[Install]
+WantedBy=timers.target

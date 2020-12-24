@@ -1,0 +1,7 @@
+[Unit]
+Description=ArchStrike pkgupdates
+
+[Service]
+Type=notify
+WorkingDirectory=/usr/share/pkgupdates
+ExecStart=/usr/bin/pkgupdates -o /data/www/public/pkgupdates.txt
