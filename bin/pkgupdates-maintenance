@@ -9,6 +9,8 @@ import re
 import pathlib
 
 pkgupdates = pathlib.Path(__file__).resolve().parent.parent
+if pkgupdates == pathlib.Path("/usr"):  # check if installed
+    pkgupdates = pathlib.Path("/usr/share/pkgupdates")
 archversion = pathlib.Path(pkgupdates, 'archversion.conf')
 archpkg_re = re.compile(r'^\[(?P<package>(?!DEFAULT).*)\]', re.M)
 splitpkg_re = re.compile(r'^pkgname=\((?P<names>[^)]*)\)', re.M)
