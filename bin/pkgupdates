@@ -6,6 +6,7 @@ import logging
 import logging.handlers
 import pathlib
 import re
+import tempfile
 from subprocess import Popen, PIPE, STDOUT
 
 
@@ -18,11 +19,18 @@ pkgupdates_maintenance = bin_path.joinpath('pkgupdates-maintenance')
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Script for running pkgupdates as a cron job')
-    parser.add_argument('-r', '--repository', type=pathlib.Path, default="/opt/pkgupdates",
-                        help='Path where pkgupdates is cloned')
-    parser.add_argument('-o', '--output', type=pathlib.Path, default="/data/www/public/pkgupdates.txt",
-                        help='Write output to a non-default file')
-    return parser.parse_args()
+    # /data/www/public/pkgupdates.txt
+    default_output = pathlib.Path(tempfile.gettempdir(), "pkgupdates.txt")
+    parser.add_argument('-o', '--output', type=pathlib.Path, default=default_output,
+                        help=f'Write output to file (default {default_output})')
+    parser.add_argument('-c', '--cwd', type=pathlib.Path, default=pathlib.Path.cwd(),
+                        help=f'The cwd for pkgupdates-sync (default {pathlib.Path.cwd()})')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='Enable debug (default False)')
+    args = parser.parse_args()
+    if not args.cwd.is_absolute():
+        args.cwd = pathlib.Path.cwd().joinpath(args.cwd).resolve()
+    return args
 
 
 def config_logging(args):
@@ -40,13 +48,18 @@ def get_rfc_datetime_now():
 
 
 def run_sync(args):
-    with Popen([pkgupdates_sync, "-cdnf"], stdout=PIPE, stderr=STDOUT, cwd=args.repository, text=True) as proc:
+    if args.debug:
+        sync_cmd = [pkgupdates_sync, "-cdbnf", "+acccheck"]
+    else:
+        sync_cmd = [pkgupdates_sync, "-cdnf"]
+
+    with Popen(sync_cmd, stdout=PIPE, stderr=STDOUT, cwd=args.cwd, text=True) as proc:
         for line in proc.stdout:
             logger.info(home_re.sub('', line.rstrip()))
 
 
 def run_maintenance(args):
-    with Popen([pkgupdates_maintenance], stdout=PIPE, stderr=STDOUT, cwd=args.repository, text=True) as proc:
+    with Popen([pkgupdates_maintenance], stdout=PIPE, stderr=STDOUT, cwd=args.cwd, text=True) as proc:
         for line in proc.stdout:
             logger.info(home_re.sub('', line.rstrip()))
 
