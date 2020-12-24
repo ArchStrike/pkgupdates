@@ -23,7 +23,9 @@ def parse_args():
     default_output = pathlib.Path(tempfile.gettempdir(), "pkgupdates.txt")
     parser.add_argument('-o', '--output', type=pathlib.Path, default=default_output,
                         help=f'Write output to file (default {default_output})')
-    parser.add_argument('-c', '--cwd', type=pathlib.Path, default=pathlib.Path.cwd(),
+    installed_cwd = pathlib.Path("/usr/share/pkgupdates")
+    default_cwd = pathlib.Path.cwd() if bin_path != pathlib.Path("/usr/bin") else installed_cwd
+    parser.add_argument('-c', '--cwd', type=pathlib.Path, default=default_cwd,
                         help=f'The cwd for pkgupdates-sync (default {pathlib.Path.cwd()})')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='Enable debug (default False)')
