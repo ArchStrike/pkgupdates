@@ -5,8 +5,12 @@
  - packages that are pending and have an active pkgupdates conf
 The confs that pkgupdates uses are develversion.conf, archversion.conf, or noversion.txt
 """
+import argparse
+import json
 import re
+import requests
 import pathlib
+import pycman
 
 pkgupdates = pathlib.Path(__file__).resolve().parent.parent
 if pkgupdates == pathlib.Path("/usr"):  # check if installed
@@ -92,7 +96,7 @@ def find_conf_pending(pending_packages, conf_packages, confname):
     return pending_confs
 
 
-if __name__ == "__main__":
+def get_packages():
     packages = {}
     # Find supported packages (PKGBUILD exist in pending or archstrike folder)
     packages['pkgrepo'] = set([p for p in get_pkgrepo_packages()])
@@ -102,7 +106,56 @@ if __name__ == "__main__":
     packages['develversion.conf'] = set([p for p in get_develversion_packages()])
     packages['archversion.conf'] = set([p for p in get_archversion_packages()])
     packages['noversion.txt'] = set([p for p in get_noversion_packages()])
-    #
+    return packages
+
+
+def resolve_missing_urls(missing):
+    pacman_config = pycman.config.PacmanConfig('/etc/pacman.conf')
+    hpacman = pacman_config.initialize_alpm()
+    as_db = None
+    for db in hpacman.get_syncdbs():
+        if db.name == 'archstrike':
+            as_db = db
+            break
+    status_pkgs = {'1XX': [], '2XX': [], '3XX': [], '4XX': [], '5XX': [], 'EXC': [], 'NIL': []}
+    _user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
+    _user_agent += 'Chrome/90.0.4430.212 Safari/537.36'
+    headers = {'pragma': 'no-cache',
+               'cache-control': 'no-cache',
+               'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="90"',
+               'sec-ch-ua-mobile': '?0',
+               'user-agent': _user_agent,
+               'accept': '*/*',
+               'sec-fetch-site': 'none',
+               'sec-fetch-mode': 'navigate',
+               'sec-fetch-dest': 'document',
+               'accept-language': 'en-US,en;q=0.9'}
+
+    for pkgname in missing:
+        try:
+            print(pkgname)
+            pkg = as_db.get_pkg(pkgname)
+            if pkg is None:
+                status_pkgs['NIL'].append((pkgname, None))
+                continue
+            response = requests.get(pkg.url, headers=headers, timeout=0.3)
+            status_pkgs[f'{response.status_code//100}XX'].append((pkg.name, pkg.url))
+        except Exception:
+            status_pkgs['EXC'].append((pkgname, pkg.url))
+    output = pathlib.Path('/tmp/resolve_missing_urls.json')
+    with output.open('w') as hJson:
+        json.dump(status_pkgs, hJson)
+    print("Dumped status codes from get requests to url of packages missing conf for pkgupdates")
+    print(f"    {output}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Generate maintenance help')
+    parser.add_argument('-r', '--resolve', action='store_true', help='Try to resolve source of missing packages')
+    args = parser.parse_args()
+    packages = get_packages()
     deprecated = {conf: find_conf_deprecated(packages['supported'], packages[conf], conf) for conf in CONF_NAMES}
     missing = find_conf_missing(packages)
     pending = {conf: find_conf_pending(packages['pending'], packages[conf], conf) for conf in CONF_NAMES}
+    if args.resolve:
+        resolve_missing_urls(missing)
