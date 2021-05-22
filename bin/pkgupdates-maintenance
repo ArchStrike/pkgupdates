@@ -15,6 +15,7 @@ archversion = pathlib.Path(pkgupdates, 'archversion.conf')
 archpkg_re = re.compile(r'^\[(?P<package>(?!DEFAULT).*)\]', re.M)
 splitpkg_re = re.compile(r'^pkgname=\((?P<names>[^)]*)\)', re.M)
 splitpkg_func_re = re.compile(r'^package_(?P<name>[^( ]*)', re.M)
+CONF_NAMES = ('develversion.conf', 'archversion.conf', 'noversion.txt')
 
 
 def _parse_pkgnames(pkgbuild):
@@ -64,11 +65,23 @@ def get_noversion_packages():
         yield match.group('package')
 
 
-def find_conf_deprecated(pkgrepo_packages, other_conf_packages, conf_packages, confname):
-    deprecated_packages = sorted(conf_packages - pkgrepo_packages.union(other_conf_packages))
+def find_conf_deprecated(supported_packages, conf_packages, confname):
+    deprecated_packages = sorted(conf_packages - supported_packages)
     if deprecated_packages:
         print(f"\033[91m# Deprecated packages from {confname}\033[0m")
         print("\n".join(deprecated_packages))
+    return deprecated_packages
+
+
+def find_conf_missing(packages):
+    all_conf_packages = set([])
+    for conf in CONF_NAMES:
+        all_conf_packages = all_conf_packages.union(packages[conf])
+    missing_packages = sorted(packages['pkgrepo'] - all_conf_packages)
+    if missing_packages:
+        print("\033[91m# Missing configuration packages\033[0m")
+        print("\n".join(missing_packages))
+    return missing_packages
 
 
 def find_conf_pending(pending_packages, conf_packages, confname):
@@ -76,31 +89,20 @@ def find_conf_pending(pending_packages, conf_packages, confname):
     if pending_confs:
         print(f"\033[91m# Pending packages found in {confname}\033[0m")
         print("\n".join(pending_confs))
-
-
-def find_conf_missing(pkgrepo_packages, all_conf_packages):
-    missing_packages = sorted(pkgrepo_packages - all_conf_packages)
-    if missing_packages:
-        print("\033[91m# Missing configuration packages\033[0m")
-        print("\n".join(missing_packages))
+    return pending_confs
 
 
 if __name__ == "__main__":
-    pkgrepo_packages = set([p for p in get_pkgrepo_packages()])
-    pending_packages = set([p for p in get_pending_packages()])
-    develversion_packages = set([p for p in get_develversion_packages()])
-    archversion_packages = set([p for p in get_archversion_packages()])
-    noversion_packages = set([p for p in get_noversion_packages()])
-    find_conf_deprecated(pkgrepo_packages.union(pending_packages),
-                         noversion_packages.union(archversion_packages),
-                         develversion_packages, "develversion.conf")
-    find_conf_deprecated(pkgrepo_packages.union(pending_packages),
-                         noversion_packages.union(develversion_packages),
-                         archversion_packages, "archversion.conf")
-    find_conf_deprecated(pkgrepo_packages.union(pending_packages),
-                         archversion_packages.union(develversion_packages),
-                         noversion_packages, "noversion.txt")
-    find_conf_missing(pkgrepo_packages, archversion_packages.union(develversion_packages).union(noversion_packages))
-    find_conf_pending(pending_packages, archversion_packages, "archversion.conf")
-    find_conf_pending(pending_packages, develversion_packages, "develversion.conf")
-    find_conf_pending(pending_packages, noversion_packages, "noversion.txt")
+    packages = {}
+    # Find supported packages (PKGBUILD exist in pending or archstrike folder)
+    packages['pkgrepo'] = set([p for p in get_pkgrepo_packages()])
+    packages['pending'] = set([p for p in get_pending_packages()])
+    packages['supported'] = packages['pkgrepo'].union(packages['pending'])
+    # Find package names in develversion.conf, archversion.conf, noversion.txt
+    packages['develversion.conf'] = set([p for p in get_develversion_packages()])
+    packages['archversion.conf'] = set([p for p in get_archversion_packages()])
+    packages['noversion.txt'] = set([p for p in get_noversion_packages()])
+    #
+    deprecated = {conf: find_conf_deprecated(packages['supported'], packages[conf], conf) for conf in CONF_NAMES}
+    missing = find_conf_missing(packages)
+    pending = {conf: find_conf_pending(packages['pending'], packages[conf], conf) for conf in CONF_NAMES}
