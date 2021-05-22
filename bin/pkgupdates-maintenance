@@ -133,7 +133,6 @@ def resolve_missing_urls(missing):
 
     for pkgname in missing:
         try:
-            print(pkgname)
             pkg = as_db.get_pkg(pkgname)
             if pkg is None:
                 status_pkgs['NIL'].append((pkgname, None))
