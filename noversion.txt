@@ -159,3 +159,4 @@
 [python2-xcffib]                 # python 2 is eol so ignored
 [python2-xlsxwriter]             # python 2 is eol so ignored
 [python2-xmpppy]                 # python 2 is eol so ignored
+[fang]                           # difficult to parse and untouched in 5 years
