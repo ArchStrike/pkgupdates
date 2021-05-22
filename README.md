@@ -8,4 +8,4 @@ pkgupdates-sync -cdn +pkgname
 ``` 
 For `pkgupdates-sync`, the `-x` option will display more examples of how to do custom version checks. The script `bin/cron-pkgupdates` will function better as a cron job than the underlying `pkgupdates`.    
 
-The `pkgupdates` script calls both `pkgupdates-sync` and `pkgupdates-maintenance`.
+The `pkgupdates` script calls both `pkgupdates-sync` and `pkgupdates-maintenance`. To bucket missing packages by URL response code, run `pkgupdates-maintenance --resolve`.
