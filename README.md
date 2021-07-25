@@ -1,6 +1,16 @@
 # ArchStrike Package Updates
 To keep packages up-to-date, `pkgupdates` automates a `GET` request to the upstream url, matching the version regex given a valid response, and comparing the upstream version to the ArchStrike repository.    
 
+## Dependencies
+```sh
+git clone git@github.com:ArchStrike/archversion-envconfig-git.git
+cd archversion-envconfig-git/
+alias build='arch-nspawn ${CHROOT}/root pacman -Syu; makechrootpkg -c -r ${CHROOT} -- -i'
+build
+sudo pacman -U archversion-envconfig-git-*-any.pkg.tar.zst
+sudo pacman -S curl git pacman sqlite tar
+```
+
 ## Maintenance Basics
 The file `archversion.conf` defines a upstream URL, version regex, and a Python expression for each package. The file `develversion.conf` defines the vcs package list. After updating `archversion.conf` or `develversion.conf` for a package, verify your changes work as expected.
 ```
