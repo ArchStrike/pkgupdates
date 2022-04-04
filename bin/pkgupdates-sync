@@ -98,7 +98,7 @@ packagercheck_lock=0
 git_lock=0
 
 # Package repo directories
-git_repodirs=('archstrike' 'archstrike-testing')
+git_repodir='archstrike'
 
 # Arrays containing the list of packages to check
 declare -a archversion_pkglist=() develversion_pkglist=()
@@ -383,9 +383,8 @@ function load_repodb {
     # Load the latest DB for the pkgdir's arch into repo_packages and fail if it's empty or the fails don't contain $1
     local tmp_pkg='' tmp_packages='' arch="$1"
 
-    for repo in "${git_repodirs[@]}"; do
-        tmp_packages="$tmp_packages$(curl -s -0 "$PKGREPO_DOMAIN/repo/$arch/$repo/$repo.db" | tar zt)"
-    done
+    repo="${git_repodir}"
+    tmp_packages="$tmp_packages$(curl -s -0 "$PKGREPO_DOMAIN/repo/$arch/$repo/$repo.db" | tar zt)"
 
     # Display an error if the repo db couldn't be downloaded
     [[ -n "${tmp_packages[*]}" ]] || {
@@ -450,24 +449,14 @@ function develversion_function {
         (( ignore == 1 )) && continue
 
         [[ ! "$pkg" =~ ^\ *# ]] && {
-            # Determine the repo directory the package is located in
-            unset repo_dir
-
-            for dir in "${git_repodirs[@]}"; do
-                if [[ -d "$REPODIR/$dir/$pkg" ]]; then
-                    repo_dir="$dir"
-                    break
-                fi
-            done
-
-            # Error+skip if the package doesn't exist in any of the ${git_repodirs[@]} directories or if ${pkg}/PKGBUILD is missing
-            [[ -z "$repo_dir" || -f "$REPODIR/$repo_dir/$pkg/PKGBUILD" ]] || {
+            # Error+skip if the package doesn't exist in the ${git_repodir} directory or if ${pkg}/PKGBUILD is missing
+            [[ -z "$git_repodir" || -f "$REPODIR/${git_repodir}/$pkg/PKGBUILD" ]] || {
                 printf '%s %s %s\n' "$c_b[$c_w$pkg$c_b]" "${c_r}ERROR:$c_c" 'Could not locate in repo' >&2
                 continue
             }
 
             # Enter the repo folder
-            pushd "$REPODIR/$repo_dir/$pkg" >/dev/null
+            pushd "$REPODIR/${git_repodir}/$pkg" >/dev/null
 
             # Exit and skip this package if a pkgver() function doesn't exist
             [[ -n "$(grep 'pkgver *(' PKGBUILD)" ]] || {
@@ -643,23 +632,13 @@ function archversion_function {
                     upver="$dateupver"
                 fi
 
-                # Determine the repo directory the package is located in
-                unset repo_dir
-
-                for dir in "${git_repodirs[@]}"; do
-                    if [[ -d "$REPODIR/$dir/$pkg" ]]; then
-                        repo_dir="$dir"
-                        break
-                    fi
-                done
-
                 # Set the $pkgver from the PKGBUILD for the $pkg if it exists
-                [[ -f "$REPODIR/$repo_dir/$pkg/PKGBUILD" ]] && {
+                [[ -f "$REPODIR/${git_repodir}/$pkg/PKGBUILD" ]] && {
                     unset pkgver
                     while read -r; do
                         [[ "$REPLY" =~ ^\ *(pkgver|_[[:alnum:]_]*)\ *= && ! "$REPLY" =~ [\)\(\`\|\&\>\<] ]] \
                             && eval "$REPLY"
-                    done < "$REPODIR/$repo_dir/$pkg/PKGBUILD"
+                    done < "$REPODIR/${git_repodir}/$pkg/PKGBUILD"
                 }
 
                 # Compare the upstream version again the pacman version, or both the db and git pacman versions if they differ
@@ -694,7 +673,7 @@ function packagercheck_function {
         pushd "$packagercheck_tmpdir" >/dev/null
 
         for arch in "${arch_list[@]}"; do
-            for repo in "${git_repodirs[@]}"; do
+                repo="${git_repodir}"
                 [[ -f repo.db ]] && rm repo.db
                 curl -s -0 "$PKGREPO_DOMAIN/repo/$arch/$repo/$repo.db" > repo.db
                 [[ -d repo-dir ]] && rm -rf repo-dir
@@ -711,7 +690,6 @@ function packagercheck_function {
                 done
 
                 popd >/dev/null
-            done
         done
 
         popd >/dev/null
@@ -745,47 +723,17 @@ function check_function {
         declare -a nonexistent_pkgs=()
 
         for pkg in "${archversion_packages[@]}"; do
-            # Determine the repo directory the package is located in
-            unset repo_dir
-
-            for dir in "${git_repodirs[@]}"; do
-                if [[ -d "$REPODIR/$dir/$pkg" ]]; then
-                    repo_dir="$dir"
-                    break
-                fi
-            done
-
-            [[ -d "$REPODIR/$repo_dir/$pkg" ]] \
+            [[ -d "$REPODIR/${git_repodir}/$pkg" ]] \
                 || nonexistent_pkgs=("${nonexistent_pkgs[@]}" "$c_b${ARCHVERSION_CONF/*\/}$c_c $c_y$pkg$c_c")
         done
 
         for pkg in "${develversion_packages[@]}"; do
-            # Determine the repo directory the package is located in
-            unset repo_dir
-
-            for dir in "${git_repodirs[@]}"; do
-                if [[ -d "$REPODIR/$dir/$pkg" ]]; then
-                    repo_dir="$dir"
-                    break
-                fi
-            done
-
-            [[ -d "$REPODIR/$repo_dir/$pkg" ]] \
+            [[ -d "$REPODIR/${git_repodir}/$pkg" ]] \
                 || nonexistent_pkgs=("${nonexistent_pkgs[@]}" "$c_b${DEVELVERSION_CONF/*\/}$c_c $c_y$pkg$c_c")
         done
 
         for pkg in "${noversion_packages[@]}"; do
-            # Determine the repo directory the package is located in
-            unset repo_dir
-
-            for dir in "${git_repodirs[@]}"; do
-                if [[ -d "$REPODIR/$dir/$pkg" ]]; then
-                    repo_dir="$dir"
-                    break
-                fi
-            done
-
-            [[ -d "$REPODIR/$repo_dir/$pkg" ]] \
+            [[ -d "$REPODIR/${git_repodir}/$pkg" ]] \
                 || nonexistent_pkgs=("${nonexistent_pkgs[@]}" "$c_b${NOVERSION/*\/}$c_c $c_y$pkg$c_c")
         done
 
@@ -818,14 +766,12 @@ function check_function {
 
         local all_packages=" ${archversion_packages[*]} ${develversion_packages[*]} ${noversion_packages[*]} "
 
-        for repo_dir in "${git_repodirs[@]}"; do
-            for pkg in "$REPODIR/$repo_dir/"*; do
-                [[ -d "$pkg" ]] && {
-                    pkg="${pkg/*\/}"
-                    [[ ! "$all_packages" =~ \ $pkg\  ]] \
-                        && missing_pkgs=("${missing_pkgs[@]}" "$c_y$pkg$c_c")
-                }
-            done
+        for pkg in "$REPODIR/${git_repodir}/"*; do
+            [[ -d "$pkg" ]] && {
+                pkg="${pkg/*\/}"
+                [[ ! "$all_packages" =~ \ $pkg\  ]] \
+                    && missing_pkgs=("${missing_pkgs[@]}" "$c_y$pkg$c_c")
+            }
         done
 
         # Display the number of missing packages folowed by a list of them
