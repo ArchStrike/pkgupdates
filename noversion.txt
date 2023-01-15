@@ -66,6 +66,5 @@
 [python2-dtfabric]               # python 2 is eol so ignored
 [python2-fuzzywuzzy-git]         # python 2 is eol so ignored
 [python2-iampoliciesgonewild]    # python 2 is eol so ignored
-[python2-instalooter]            # python 2 is eol so ignored
 [python2-jinja2-time]            # python 2 is eol so ignored
 [python2-magic-git]              # python 2 is eol so ignored
