@@ -71,7 +71,6 @@
 [python2-bfac-git]               # python 2 is eol so ignored
 [python2-dpkt-git]               # python 2 is eol so ignored
 [python2-dtfabric]               # python 2 is eol so ignored
-[python2-fake-useragent]         # python 2 is eol so ignored
 [python2-fuse]                   # python 2 is eol so ignored
 [python2-fuzzywuzzy-git]         # python 2 is eol so ignored
 [python2-gevent-websocket]       # python 2 is eol so ignored
