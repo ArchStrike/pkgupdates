@@ -8,8 +8,9 @@ cd archversion-envconfig-git/
 alias build='arch-nspawn ${CHROOT}/root pacman -Syu; makechrootpkg -c -r ${CHROOT} -- -i'
 build
 sudo pacman -U archversion-envconfig-git-*-any.pkg.tar.zst
-sudo pacman -S curl git pacman sqlite tar
+sudo pacman -S curl git pacman sqlite tar python-gitpython python-systemd
 ```
+By installing `archversion-envconfig-git`, the dependency `pyalpm` is satisfied for `bin/pkgupdates-maintenace`.
 
 ## Maintenance Basics
 The file `archversion.conf` defines a upstream URL, version regex, and a Python expression for each package. The file `develversion.conf` defines the vcs package list. After updating `archversion.conf` or `develversion.conf` for a package, verify your changes work as expected.
