@@ -19,7 +19,6 @@
 [ent]                              # no version information on website
 [erase-registrations]              # no version information on website
 [ftpmap]                           # development stopped
-[fuzzdiff]                         # development stopped
 [g711conversions]                  # development stopped
 [g72x]                             # no version information on website
 [goodork]                          # development stopped
