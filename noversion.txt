@@ -75,7 +75,6 @@
 [python2-instalooter]            # python 2 is eol so ignored
 [python2-jinja2-time]            # python 2 is eol so ignored
 [python2-magic-git]              # python 2 is eol so ignored
-[python2-mechanize]              # python 2 is eol so ignored
 [python2-mrbob]                  # python 2 is eol so ignored
 [python2-netaddr]                # python 2 is eol so ignored
 [python2-netifaces]              # python 2 is eol so ignored
