@@ -69,7 +69,6 @@
 [stompy]                           # no version info
 [fs]                               # version locked for beeswarm 0.7.8
 [python2-bfac-git]               # python 2 is eol so ignored
-[python2-blessings]              # python 2 is eol so ignored
 [python2-cairocffi]              # python 2 is eol so ignored
 [python2-certifi]                # python 2 is eol so ignored
 [python2-chai]                   # python 2 is eol so ignored
