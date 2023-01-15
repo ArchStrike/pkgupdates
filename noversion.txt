@@ -44,7 +44,6 @@
 [paketto]                          # development stopped
 [pngcheck]                         # development stopped
 [pscan]                            # no version information on website
-[python2-nmap]                     # locked at v0.1.4 per authors site
 [redirectpoison]                   # no version information on website
 [reglookup]                        # development stopped
 [rfidtool]                         # development stopped
