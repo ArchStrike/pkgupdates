@@ -58,7 +58,6 @@
 [webrute]                          # src doesnt exist out of repo
 [wmat]                             # src website is dead
 [xspy]                             # development has stopped
-[wsfuzzer]                         # inactive OWASP project
 [voipong]                          # development has stopped
 [vega]                             # no version info at url/source
 [tbear]                            # no version info
