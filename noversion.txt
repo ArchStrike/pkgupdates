@@ -72,7 +72,6 @@
 [python2-dpkt-git]               # python 2 is eol so ignored
 [python2-dtfabric]               # python 2 is eol so ignored
 [python2-fuzzywuzzy-git]         # python 2 is eol so ignored
-[python2-gitpython]              # python 2 is eol so ignored
 [python2-humanfriendly]          # python 2 is eol so ignored
 [python2-iampoliciesgonewild]    # python 2 is eol so ignored
 [python2-instalooter]            # python 2 is eol so ignored
