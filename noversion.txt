@@ -74,7 +74,6 @@
 [python2-instalooter]            # python 2 is eol so ignored
 [python2-jinja2-time]            # python 2 is eol so ignored
 [python2-magic-git]              # python 2 is eol so ignored
-[python2-ntplib]                 # python 2 is eol so ignored
 [python2-ordereddict]            # python 2 is eol so ignored
 [python2-paho-mqtt]              # python 2 is eol so ignored
 [python2-pbkdf2]                 # python 2 is eol so ignored
