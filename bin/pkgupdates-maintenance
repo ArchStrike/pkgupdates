@@ -10,6 +10,7 @@ import json
 import re
 import requests
 import pathlib
+import importlib
 import pycman
 
 pkgupdates = pathlib.Path(__file__).resolve().parent.parent
@@ -19,16 +20,21 @@ archversion = pathlib.Path(pkgupdates, 'archversion.conf')
 develversion = pathlib.Path(pkgupdates, 'develversion.conf')
 noversion = pathlib.Path(pkgupdates, 'noversion.txt')
 archpkg_re = re.compile(r'^\[(?P<package>(?!DEFAULT).*)\]', re.M)
-splitpkg_re = re.compile(r'^pkgname=\((?P<names>[^)]*)\)', re.M)
+splitpkg_re = re.compile(r'^pkgname=\((?P<names>\s*[^)\s]+\s+[^)\s]+\s*)\)', re.M)
 splitpkg_func_re = re.compile(r'^package_(?P<name>[^( ]*)', re.M)
 CONF_PATHS = (archversion, develversion, noversion)
+conf_regex_fstrings = {
+    archversion: r'^[# ]*\[{pkgname}\]\n(?:.+\n)+(?:^\n)?',
+    develversion: r'^{pkgname}\n',
+    noversion: r'^[# ]*\[{pkgname}\].*\n'
+}
 
 
 def _parse_pkgnames(pkgbuild):
     with pkgbuild.open() as fhandle:
         fcontent = fhandle.read()
-    match = splitpkg_re.search(fcontent)
-    if match:
+    # Double check that func_re matches b/c splitpkg may match w
+    if splitpkg_re.search(fcontent) and splitpkg_func_re.search(fcontent):
         for func_match in splitpkg_func_re.finditer(fcontent):
             yield func_match.group('name')
     else:
@@ -92,6 +98,10 @@ def find_conf_pending(packages, conf):
     if pending_confs:
         print(f"\033[91m# Pending packages found in {conf.name}\033[0m")
         print("\n".join(pending_confs))
+    duplicated_pending_confs = packages['duplicated'].intersection(packages[conf])
+    if duplicated_pending_confs:
+        print(f"\033[91m# Duplicate packages found in archstrike/ and pending/ for {conf.name}\033[0m")
+        print("\n".join(duplicated_pending_confs))
     return pending_confs
 
 
@@ -101,6 +111,7 @@ def get_packages():
     packages['pkgrepo'] = set([p for p in get_pkgrepo_packages()])
     packages['pending'] = set([p for p in get_pending_packages()])
     packages['supported'] = packages['pkgrepo'].union(packages['pending'])
+    packages['duplicated'] = packages['pkgrepo'].intersection(packages['pending'])
     # Find package names in develversion.conf, archversion.conf, noversion.txt
     packages[develversion] = set([p for p in get_develversion_packages()])
     packages[archversion] = set([p for p in get_archversion_packages()])
@@ -147,6 +158,29 @@ def resolve_missing_urls(missing):
     print(f"    {output}")
 
 
+def deprecate_from_confs(packages, unavailable_packages, maintenance_type):
+    """Iterate deprecated/pending packages and remove from confs"""
+    _git = importlib.import_module('git')
+    _pkgupdates_repo = _git.Repo(pkgupdates)
+
+    for conf in unavailable_packages:
+        regex_fstring = conf_regex_fstrings[conf]
+        with conf.open() as conf_handle:
+            conf_content = conf_handle.read()
+        for pkgname in unavailable_packages[conf]:
+            if pkgname in packages['duplicated']:
+                continue  # Don't remove pending package from conf if duplicated in pkgrepo/archstrike
+            pattern = regex_fstring.format(pkgname=pkgname)
+            new_conf_content = re.sub(pattern, '', conf_content, count=0, flags=re.M)
+            if conf_content == new_conf_content:
+                raise RuntimeError(f"Failed to deprecate {pkgname} from {conf.name} ({maintenance_type})!")
+            with conf.open('w') as conf_handle:
+                conf_handle.write(new_conf_content)
+            conf_content = new_conf_content
+            _pkgupdates_repo.index.add([conf])
+            _pkgupdates_repo.index.commit(f"Removed {pkgname} from {conf.name} because it is {maintenance_type}.")
+
+
 def check_for_maintenance(maintenance_func, packages, category):
     return {conf: maintenance_func(packages, conf) for conf in CONF_PATHS}
 
@@ -154,6 +188,7 @@ def check_for_maintenance(maintenance_func, packages, category):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate maintenance help')
     parser.add_argument('-r', '--resolve', action='store_true', help='Try to resolve source of missing packages')
+    parser.add_argument('-d', '--deprecate', action='store_true', help='Iterate deprecated packages and update confs')
     args = parser.parse_args()
     packages = get_packages()
     deprecated = check_for_maintenance(find_conf_deprecated, packages, 'supported')
@@ -161,3 +196,6 @@ if __name__ == "__main__":
     pending = check_for_maintenance(find_conf_pending, packages, 'pending')
     if args.resolve:
         resolve_missing_urls(missing)
+    if args.deprecate:
+        deprecate_from_confs(packages, deprecated, 'deprecated')
+        deprecate_from_confs(packages, pending, 'pending')
