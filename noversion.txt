@@ -23,7 +23,6 @@
 [g72x]                             # no version information on website
 [gooscan]                          # no version information on website
 [hack_library]                     # development stopped
-[hash-identifier]                  # src last updated 2011
 [http-fuzz]                        # no version information on website
 [httprint]                         # development stopped
 [iaxflood]                         # no version information on website
