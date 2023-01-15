@@ -54,7 +54,6 @@
 [stegsolve]                        # development has stopped
 [tcptraceroute]                    # Authors website is down project is dead
 [webrute]                          # src doesnt exist out of repo
-[wmat]                             # src website is dead
 [xspy]                             # development has stopped
 [voipong]                          # development has stopped
 [vega]                             # no version info at url/source
