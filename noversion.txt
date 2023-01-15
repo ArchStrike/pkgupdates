@@ -21,7 +21,6 @@
 [ftpmap]                           # development stopped
 [g711conversions]                  # development stopped
 [g72x]                             # no version information on website
-[goodork]                          # development stopped
 [gooscan]                          # no version information on website
 [grepforrfi]                       # one shot release
 [hack_library]                     # development stopped
