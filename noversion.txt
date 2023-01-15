@@ -58,7 +58,6 @@
 [tcptraceroute]                    # Authors website is down project is dead
 [webrute]                          # src doesnt exist out of repo
 [wmat]                             # src website is dead
-[python2-xdot]                     # 0.6 is the last python2 version, until we need python-xdot this pkg is locked
 [xspy]                             # development has stopped
 [wsfuzzer]                         # inactive OWASP project
 [voipong]                          # development has stopped
