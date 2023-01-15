@@ -74,7 +74,6 @@
 [python2-instalooter]            # python 2 is eol so ignored
 [python2-jinja2-time]            # python 2 is eol so ignored
 [python2-magic-git]              # python 2 is eol so ignored
-[python2-rarfile]                # python 2 is eol so ignored
 [python2-redis]                  # python 2 is eol so ignored
 [python2-regex]                  # python 2 is eol so ignored
 [python2-requests-file]          # python 2 is eol so ignored
