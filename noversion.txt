@@ -8,7 +8,6 @@
 [bkhive]                           # this package downloads but no link appears to be on sf.net
 [bluesnarfer]                      # no version information on website (refers to dl as 'original src')
 [brutessh]                         # this used to be parsed out of the google code repo which is now archived
-[bss]                              # archversion can't decode site (fails with: 'utf-8' codec can't decode)
 [burpsuite]                        # trial has no version info listed
 [cisco-router-config]              # no online assets
 [cisco-torch]                      # no download link
