@@ -14,7 +14,6 @@
 [dff-scanner]                      # no version information on website
 [dirbuster]                        # is no longer maintained is replaced by zap proxy
 [dnspredict]                       # src only on our repo
-[dpeparser]                        # development stopped
 [dumpzilla]                        # development stopped
 [eindeutig]                        # one shot release
 [ent]                              # no version information on website
