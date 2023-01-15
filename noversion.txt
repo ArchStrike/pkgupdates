@@ -74,7 +74,6 @@
 [python2-instalooter]            # python 2 is eol so ignored
 [python2-jinja2-time]            # python 2 is eol so ignored
 [python2-magic-git]              # python 2 is eol so ignored
-[python2-pysmi]                  # python 2 is eol so ignored
 [python2-pytest-flake8]          # python 2 is eol so ignored
 [python2-pytest-isort]           # python 2 is eol so ignored
 [python2-pytorctl]               # python 2 is eol so ignored
