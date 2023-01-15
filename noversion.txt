@@ -43,7 +43,6 @@
 [pasco]                            # one shot release in 2004
 [paketto]                          # development stopped
 [pngcheck]                         # development stopped
-[powerfuzzer]                      # development stopped
 [pscan]                            # no version information on website
 [python2-gmpy]                     # locked at 1.17
 [python2-nmap]                     # locked at v0.1.4 per authors site
