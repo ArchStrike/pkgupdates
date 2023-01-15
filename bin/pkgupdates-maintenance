@@ -16,10 +16,12 @@ pkgupdates = pathlib.Path(__file__).resolve().parent.parent
 if pkgupdates == pathlib.Path("/usr"):  # check if installed
     pkgupdates = pathlib.Path("/usr/share/pkgupdates")
 archversion = pathlib.Path(pkgupdates, 'archversion.conf')
+develversion = pathlib.Path(pkgupdates, 'develversion.conf')
+noversion = pathlib.Path(pkgupdates, 'noversion.txt')
 archpkg_re = re.compile(r'^\[(?P<package>(?!DEFAULT).*)\]', re.M)
 splitpkg_re = re.compile(r'^pkgname=\((?P<names>[^)]*)\)', re.M)
 splitpkg_func_re = re.compile(r'^package_(?P<name>[^( ]*)', re.M)
-CONF_NAMES = ('develversion.conf', 'archversion.conf', 'noversion.txt')
+CONF_PATHS = (archversion, develversion, noversion)
 
 
 def _parse_pkgnames(pkgbuild):
@@ -47,14 +49,12 @@ def get_pkgrepo_packages():
 
 
 def get_develversion_packages():
-    develversion = pathlib.Path(pkgupdates, 'develversion.conf')
     with develversion.open() as fhandle:
         for pkgbuild in fhandle.readlines():
             yield pkgbuild.rstrip('\n')
 
 
 def get_archversion_packages():
-    archversion = pathlib.Path(pkgupdates, 'archversion.conf')
     with archversion.open() as fhandle:
         fcontent = fhandle.read()
     for match in archpkg_re.finditer(fcontent):
@@ -62,24 +62,23 @@ def get_archversion_packages():
 
 
 def get_noversion_packages():
-    noversion = pathlib.Path(pkgupdates, 'noversion.txt')
     with noversion.open() as fhandle:
         fcontent = fhandle.read()
     for match in archpkg_re.finditer(fcontent):
         yield match.group('package')
 
 
-def find_conf_deprecated(supported_packages, conf_packages, confname):
-    deprecated_packages = sorted(conf_packages - supported_packages)
+def find_conf_deprecated(packages, conf):
+    deprecated_packages = sorted(packages[conf] - packages['supported'])
     if deprecated_packages:
-        print(f"\033[91m# Deprecated packages from {confname}\033[0m")
+        print(f"\033[91m# Deprecated packages from {conf.name}\033[0m")
         print("\n".join(deprecated_packages))
     return deprecated_packages
 
 
 def find_conf_missing(packages):
     all_conf_packages = set([])
-    for conf in CONF_NAMES:
+    for conf in CONF_PATHS:
         all_conf_packages = all_conf_packages.union(packages[conf])
     missing_packages = sorted(packages['pkgrepo'] - all_conf_packages)
     if missing_packages:
@@ -88,10 +87,10 @@ def find_conf_missing(packages):
     return missing_packages
 
 
-def find_conf_pending(pending_packages, conf_packages, confname):
-    pending_confs = pending_packages.intersection(conf_packages)
+def find_conf_pending(packages, conf):
+    pending_confs = packages['pending'].intersection(packages[conf])
     if pending_confs:
-        print(f"\033[91m# Pending packages found in {confname}\033[0m")
+        print(f"\033[91m# Pending packages found in {conf.name}\033[0m")
         print("\n".join(pending_confs))
     return pending_confs
 
@@ -103,9 +102,9 @@ def get_packages():
     packages['pending'] = set([p for p in get_pending_packages()])
     packages['supported'] = packages['pkgrepo'].union(packages['pending'])
     # Find package names in develversion.conf, archversion.conf, noversion.txt
-    packages['develversion.conf'] = set([p for p in get_develversion_packages()])
-    packages['archversion.conf'] = set([p for p in get_archversion_packages()])
-    packages['noversion.txt'] = set([p for p in get_noversion_packages()])
+    packages[develversion] = set([p for p in get_develversion_packages()])
+    packages[archversion] = set([p for p in get_archversion_packages()])
+    packages[noversion] = set([p for p in get_noversion_packages()])
     return packages
 
 
@@ -148,13 +147,17 @@ def resolve_missing_urls(missing):
     print(f"    {output}")
 
 
+def check_for_maintenance(maintenance_func, packages, category):
+    return {conf: maintenance_func(packages, conf) for conf in CONF_PATHS}
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate maintenance help')
     parser.add_argument('-r', '--resolve', action='store_true', help='Try to resolve source of missing packages')
     args = parser.parse_args()
     packages = get_packages()
-    deprecated = {conf: find_conf_deprecated(packages['supported'], packages[conf], conf) for conf in CONF_NAMES}
+    deprecated = check_for_maintenance(find_conf_deprecated, packages, 'supported')
     missing = find_conf_missing(packages)
-    pending = {conf: find_conf_pending(packages['pending'], packages[conf], conf) for conf in CONF_NAMES}
+    pending = check_for_maintenance(find_conf_pending, packages, 'pending')
     if args.resolve:
         resolve_missing_urls(missing)
