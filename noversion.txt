@@ -54,7 +54,6 @@
 [slowloris6]                       # src only on our repo
 [smtp-user-enum]                   # development stopped
 [stegsolve]                        # development has stopped
-[sqlbrute]                         # one shot release in 2006
 [tcptraceroute]                    # Authors website is down project is dead
 [webrute]                          # src doesnt exist out of repo
 [wmat]                             # src website is dead
