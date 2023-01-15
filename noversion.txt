@@ -73,7 +73,6 @@
 [python2-fuzzywuzzy-git]         # python 2 is eol so ignored
 [python2-iampoliciesgonewild]    # python 2 is eol so ignored
 [python2-instalooter]            # python 2 is eol so ignored
-[python2-ipy]                    # python 2 is eol so ignored
 [python2-jinja2-time]            # python 2 is eol so ignored
 [python2-kiwisolver]             # python 2 is eol so ignored
 [python2-levenshtein]            # python 2 is eol so ignored
