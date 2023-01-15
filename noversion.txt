@@ -42,7 +42,6 @@
 [nbnspoof]                         # development has stopped
 [pasco]                            # one shot release in 2004
 [paketto]                          # development stopped
-[pdfminer]                         # specific version required by w3af
 [pngcheck]                         # development stopped
 [powerfuzzer]                      # development stopped
 [pscan]                            # no version information on website
